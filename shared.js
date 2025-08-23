@@ -1,0 +1,598 @@
+
+// Shared JavaScript for all pages with DM Authentication
+
+// DM Authentication Configuration
+const DM_CONFIG = {
+    password: "ASCENSION-PROTOCOL-777", // The Architect's access code
+    sessionTimeout: 3600000, // 1 hour in milliseconds
+    maxAttempts: 3,
+    lockoutTime: 300000 // 5 minutes lockout after max attempts
+};
+
+// Check DM authentication
+function checkDMAuth() {
+    const authData = localStorage.getItem('dmAuth');
+    if (!authData) return false;
+    
+    const auth = JSON.parse(authData);
+    const now = Date.now();
+    
+    // Check if session expired
+    if (now - auth.timestamp > DM_CONFIG.sessionTimeout) {
+        localStorage.removeItem('dmAuth');
+        return false;
+    }
+    
+    return auth.authenticated === true;
+}
+
+// Show DM login prompt
+function showDMLogin() {
+    // Check for lockout
+    const lockout = localStorage.getItem('dmLockout');
+    if (lockout) {
+        const lockoutData = JSON.parse(lockout);
+        if (Date.now() - lockoutData.timestamp < DM_CONFIG.lockoutTime) {
+            const remaining = Math.ceil((DM_CONFIG.lockoutTime - (Date.now() - lockoutData.timestamp)) / 60000);
+            alert(`SECURITY LOCKOUT ACTIVE\nAccess denied for ${remaining} more minutes.\n\n- PROMETHEUS CORPORATION SECURITY -`);
+            return false;
+        } else {
+            localStorage.removeItem('dmLockout');
+        }
+    }
+    
+    // Create login modal
+    const modal = document.createElement('div');
+    modal.className = 'dm-login-modal';
+    modal.innerHTML = `
+        <div class="dm-login-container">
+            <div class="dm-login-header">
+                <div class="dm-login-logo">⬢</div>
+                <h2>PROMETHEUS CORPORATION</h2>
+                <p>ARCHITECT ACCESS TERMINAL</p>
+            </div>
+            <div class="dm-login-body">
+                <div class="dm-login-message">
+                    <p>SECURITY CLEARANCE REQUIRED</p>
+                    <p class="dm-login-warning">Unauthorized access will be reported to Head Security</p>
+                </div>
+                <form id="dmLoginForm">
+                    <div class="dm-login-field">
+                        <label>AUTHORIZATION CODE:</label>
+                        <input type="password" id="dmPassword" placeholder="Enter clearance code..." autocomplete="off">
+                    </div>
+                    <div class="dm-login-buttons">
+                        <button type="submit" class="dm-login-submit">AUTHENTICATE</button>
+                        <button type="button" class="dm-login-cancel" onclick="closeDMLogin()">CANCEL</button>
+                    </div>
+                </form>
+                <div class="dm-login-hint">
+                    <p>Hint: The protocol for humanity's next evolution, followed by the perfect number</p>
+                </div>
+            </div>
+            <div class="dm-login-footer">
+                <p>INFINITE SPIRE PROJECT • FLOOR 100 • EVOLUTION DIVISION</p>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add styles
+    const styles = document.createElement('style');
+    styles.textContent = `
+        .dm-login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .dm-login-container {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+            border: 2px solid #e94560;
+            border-radius: 10px;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 50px rgba(233,69,96,0.5);
+            animation: slideUp 0.5s;
+        }
+        
+        .dm-login-header {
+            background: rgba(233,69,96,0.1);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e94560;
+        }
+        
+        .dm-login-logo {
+            font-size: 3em;
+            color: #ffdd00;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        .dm-login-header h2 {
+            color: #e94560;
+            margin: 10px 0;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+        }
+        
+        .dm-login-header p {
+            color: #888;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        
+        .dm-login-body {
+            padding: 30px;
+        }
+        
+        .dm-login-message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .dm-login-message p {
+            color: #ffdd00;
+            margin: 5px 0;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        
+        .dm-login-warning {
+            color: #e94560 !important;
+            font-size: 0.8em !important;
+            opacity: 0.8;
+        }
+        
+        .dm-login-field {
+            margin-bottom: 20px;
+        }
+        
+        .dm-login-field label {
+            display: block;
+            color: #888;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        
+        .dm-login-field input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #666;
+            color: #ffdd00;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .dm-login-field input:focus {
+            outline: none;
+            border-color: #ffdd00;
+            box-shadow: 0 0 10px rgba(255,221,0,0.3);
+        }
+        
+        .dm-login-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .dm-login-submit, .dm-login-cancel {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e94560;
+            background: rgba(233,69,96,0.1);
+            color: #e94560;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+        
+        .dm-login-submit:hover {
+            background: #e94560;
+            color: #000;
+        }
+        
+        .dm-login-cancel {
+            border-color: #666;
+            color: #888;
+        }
+        
+        .dm-login-cancel:hover {
+            background: #666;
+            color: #000;
+        }
+        
+        .dm-login-hint {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255,221,0,0.05);
+            border-left: 2px solid #ffdd00;
+            display: none;
+        }
+        
+        .dm-login-hint p {
+            color: #666;
+            font-size: 0.8em;
+            font-style: italic;
+        }
+        
+        .dm-login-footer {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            text-align: center;
+            border-top: 1px solid #333;
+        }
+        
+        .dm-login-footer p {
+            color: #555;
+            font-size: 0.7em;
+            letter-spacing: 1px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .dm-login-error {
+            animation: shake 0.5s;
+            border-color: #ff4444 !important;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    `;
+    document.head.appendChild(styles);
+    
+    // Handle form submission
+    document.getElementById('dmLoginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const password = document.getElementById('dmPassword').value;
+        const attempts = parseInt(localStorage.getItem('dmAttempts') || '0');
+        
+        if (password === DM_CONFIG.password) {
+            // Success!
+            localStorage.setItem('dmAuth', JSON.stringify({
+                authenticated: true,
+                timestamp: Date.now()
+            }));
+            localStorage.removeItem('dmAttempts');
+            
+            // Show success message
+            const container = document.querySelector('.dm-login-container');
+            container.innerHTML = `
+                <div class="dm-login-header">
+                    <div class="dm-login-logo">✓</div>
+                    <h2>ACCESS GRANTED</h2>
+                    <p>Welcome, Architect</p>
+                </div>
+                <div class="dm-login-body" style="text-align: center;">
+                    <p style="color: #0f0; margin-bottom: 20px;">Authentication successful.</p>
+                    <p style="color: #888; font-size: 0.9em;">Initializing Architect Interface...</p>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                setDMMode(true);
+                location.reload();
+            }, 2000);
+            
+        } else {
+            // Failed attempt
+            const newAttempts = attempts + 1;
+            localStorage.setItem('dmAttempts', newAttempts.toString());
+            
+            if (newAttempts >= DM_CONFIG.maxAttempts) {
+                // Lockout
+                localStorage.setItem('dmLockout', JSON.stringify({
+                    timestamp: Date.now()
+                }));
+                localStorage.removeItem('dmAttempts');
+                
+                alert(`SECURITY BREACH DETECTED\n\nMaximum attempts exceeded.\nTerminal locked for 5 minutes.\n\n- PROMETHEUS CORPORATION SECURITY -`);
+                closeDMLogin();
+            } else {
+                // Show error
+                const input = document.getElementById('dmPassword');
+                input.classList.add('dm-login-error');
+                input.value = '';
+                input.placeholder = `INVALID CODE - ${DM_CONFIG.maxAttempts - newAttempts} attempts remaining`;
+                
+                // Show hint after first failed attempt
+                if (newAttempts === 1) {
+                    document.querySelector('.dm-login-hint').style.display = 'block';
+                }
+                
+                setTimeout(() => {
+                    input.classList.remove('dm-login-error');
+                }, 500);
+            }
+        }
+    });
+    
+    document.getElementById('dmPassword').focus();
+}
+
+// Close DM login
+function closeDMLogin() {
+    const modal = document.querySelector('.dm-login-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Load game state from localStorage
+function loadGameState() {
+    const saved = localStorage.getItem('infiniteSpireState');
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    return {
+        discoveredFloors: [1], // Start with floor 1 discovered
+        monsterObservations: {},
+        structureObservations: {},
+        itemsCollected: {},
+        loreUnlocked: []
+    };
+}
+
+// Save game state to localStorage
+function saveGameState(state) {
+    localStorage.setItem('infiniteSpireState', JSON.stringify(state));
+}
+
+// Load custom database (for edited content)
+function loadCustomDatabase() {
+    const saved = localStorage.getItem('customDatabase');
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    return {
+        floors: {},
+        monsters: {},
+        structures: {},
+        items: {},
+        lore: {}
+    };
+}
+
+// Save custom database
+function saveCustomDatabase(database) {
+    localStorage.setItem('customDatabase', JSON.stringify(database));
+}
+
+// Check if in DM mode
+function isDMMode() {
+    return checkDMAuth();
+}
+
+// Set DM mode
+function setDMMode(value) {
+    if (value && !checkDMAuth()) {
+        // Need to authenticate first
+        showDMLogin();
+        return false;
+    }
+    
+    if (!value) {
+        // Logging out
+        localStorage.removeItem('dmAuth');
+        location.reload();
+    }
+    
+    return true;
+}
+
+// Mode toggle handler
+document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('modeToggle');
+    if (toggle) {
+        // Set initial state
+        if (isDMMode()) {
+            toggle.classList.add('dm-mode');
+        }
+        
+        // Add click handler
+        toggle.addEventListener('click', function() {
+            const wantsDM = !this.classList.contains('dm-mode');
+            
+            if (wantsDM) {
+                // Switching to DM mode - need auth
+                if (!isDMMode()) {
+                    showDMLogin();
+                }
+            } else {
+                // Switching to Player mode - confirm logout
+                if (confirm('Exit Architect Mode?\n\nYou will need to re-authenticate to access DM features.')) {
+                    setDMMode(false);
+                }
+            }
+        });
+    }
+    
+    // Show/hide DM-only content on load
+    document.querySelectorAll('.dm-only').forEach(el => {
+        el.style.display = isDMMode() ? 'block' : 'none';
+    });
+    
+    // Mark active nav tab
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        const tabHref = tab.getAttribute('href');
+        if (tabHref === currentPage) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Auto-logout after session timeout
+    if (isDMMode()) {
+        setTimeout(() => {
+            if (isDMMode()) {
+                alert('SECURITY NOTICE\n\nSession expired. Please re-authenticate.\n\n- PROMETHEUS CORPORATION -');
+                localStorage.removeItem('dmAuth');
+                location.reload();
+            }
+        }, DM_CONFIG.sessionTimeout);
+    }
+});
+
+// Load database from JSON file
+async function loadDatabase(filename) {
+    try {
+        // First check for custom database
+        const custom = loadCustomDatabase();
+        const category = filename.replace('.json', '');
+        if (custom[category] && Object.keys(custom[category]).length > 0) {
+            return custom[category];
+        }
+        
+        // Otherwise load default (this would normally be a fetch)
+        // For now, return sample data
+        if (filename === 'monsters.json') {
+            return {
+                welcome_construct: {
+                    name: "Welcome Construct",
+                    type: "mechanical",
+                    observationLevels: [
+                        {
+                            level: 1,
+                            description: "Humanoid automaton with a permanent smile carved into its porcelain face.",
+                            threat: "Low",
+                            behavior: "Passive unless provoked"
+                        },
+                        {
+                            level: 2,
+                            description: "The construct's greeting protocols contain subliminal compliance commands.",
+                            weakness: "Disrupted by paradoxical statements",
+                            abilities: "Compliance Field, Protocol Override"
+                        },
+                        {
+                            level: 3,
+                            description: "Former human employees permanently fused with customer service machinery.",
+                            origin: "Early Prometheus automation experiments",
+                            notes: "Some units still receive paychecks to accounts that no longer exist."
+                        }
+                    ]
+                }
+            };
+        }
+        
+        return {};
+    } catch (error) {
+        console.error(`Error loading ${filename}:`, error);
+        return {};
+    }
+}
+
+// Add observation
+function addObservation(type, entityId, amount = 1) {
+    const state = loadGameState();
+    
+    if (type === 'monster') {
+        state.monsterObservations[entityId] = Math.min(3, (state.monsterObservations[entityId] || 0) + amount);
+    } else if (type === 'structure') {
+        state.structureObservations[entityId] = Math.min(3, (state.structureObservations[entityId] || 0) + amount);
+    }
+    
+    saveGameState(state);
+    return state;
+}
+
+// Discover floor
+function discoverFloor(floorNumber) {
+    const state = loadGameState();
+    
+    if (!state.discoveredFloors.includes(floorNumber)) {
+        state.discoveredFloors.push(floorNumber);
+        saveGameState(state);
+    }
+    
+    return state;
+}
+
+// Utility function to create observation pips
+function createObservationPips(current, max = 3) {
+    return Array.from({length: max}, (_, i) => 
+        `<div class="obs-pip ${i < current ? 'filled' : ''}"></div>`
+    ).join('');
+}
+
+// DM Quick Commands (accessible from console)
+window.dmCommands = {
+    unlockAll: function() {
+        if (!isDMMode()) {
+            console.error('DM Mode required');
+            return;
+        }
+        const state = loadGameState();
+        state.discoveredFloors = Array.from({length: 100}, (_, i) => i + 1);
+        saveGameState(state);
+        console.log('All floors unlocked');
+    },
+    
+    resetCampaign: function() {
+        if (!isDMMode()) {
+            console.error('DM Mode required');
+            return;
+        }
+        if (confirm('Reset entire campaign?')) {
+            localStorage.removeItem('infiniteSpireState');
+            localStorage.removeItem('customDatabase');
+            location.reload();
+        }
+    },
+    
+    setObservation: function(type, id, level) {
+        if (!isDMMode()) {
+            console.error('DM Mode required');
+            return;
+        }
+        const state = loadGameState();
+        if (type === 'monster') {
+            state.monsterObservations[id] = level;
+        } else if (type === 'structure') {
+            state.structureObservations[id] = level;
+        }
+        saveGameState(state);
+        console.log(`Set ${type} ${id} to observation level ${level}`);
+    }
+};
+
+console.log('%cINFINITE SPIRE CAMPAIGN TOOL', 'color: #ffdd00; font-size: 20px; font-weight: bold;');
+console.log('%cDM Mode: ' + (isDMMode() ? 'ACTIVE' : 'INACTIVE'), 'color: ' + (isDMMode() ? '#0f0' : '#f00'));
+if (isDMMode()) {
+    console.log('%cDM Commands available: dmCommands.unlockAll(), dmCommands.resetCampaign(), dmCommands.setObservation()', 'color: #888');
+}

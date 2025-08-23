@@ -1,0 +1,54 @@
+{
+  "1": {
+    "name": "The Entrance Hall",
+    "type": "environmental",
+    "status": "detailed",
+    "environment": "A massive atrium with impossible geometry. The ceiling stretches infinitely upward, lined with dormant observation windows.",
+    "singularity": "Spatial Anchor - Maintains stable entry point while allowing infinite expansion of connected spaces.",
+    "inhabitants": "Automated welcome constructs (mostly broken), occasional Pilgrim camps near the entrance.",
+    "challenges": "Navigating bureaucratic security systems, avoiding malfunctioning guardian constructs.",
+    "resources": "Basic supplies, orientation materials, access to the elevator system.",
+    "notes": "The only way in or out of the tower. All expeditions must return here eventually.",
+    "monsters": ["welcome_construct", "data_wraith"],
+    "structures": ["infinite_atrium", "observation_deck"]
+  },
+  "12": {
+    "name": "The Endless Forest",
+    "type": "environmental",
+    "status": "detailed",
+    "environment": "Dense, ever-growing woodland where trees reach impossible heights. Bioluminescent fungi provide light.",
+    "singularity": "Perpetual Growth - All organic matter continuously evolves and adapts at an accelerated rate.",
+    "inhabitants": "Tree-bound humans who've fused with the forest, evolved flora with primitive intelligence.",
+    "challenges": "Navigation through shifting pathways, avoiding predatory plants, communicating with tree-folk.",
+    "resources": "Rapidly-growing food sources, living wood that reshapes itself, medicinal fungi.",
+    "notes": "The trees remember everything. Listen carefully for whispers of the first test subjects.",
+    "monsters": ["rootkin", "spore_shepherd", "bark_titan"],
+    "structures": ["canopy_settlement", "root_network", "fungal_groves"]
+  },
+  "27": {
+    "name": "The Memory Desert",
+    "type": "technological",
+    "status": "detailed",
+    "environment": "Vast sandy wasteland where sand is composed of crystallized memories. Memory fragments replay as mirages.",
+    "singularity": "Temporal Fragments - Past events replay randomly, sometimes bleeding into reality.",
+    "inhabitants": "Echo-people (memory remnants given form), Chroniclers who catalog and trade information.",
+    "challenges": "Distinguishing reality from memory echoes, avoiding memory loops, surviving memory storms.",
+    "resources": "Information about the tower's past, memory crystals granting temporary skills, echo-artifacts.",
+    "notes": "Every step disturbs someone's forgotten moment. The deeper you dig, the older the memories.",
+    "monsters": ["echo_remnant", "memory_thief", "chronophage"],
+    "structures": ["memory_oasis", "archive_ruins", "temporal_maze"]
+  },
+  "45": {
+    "name": "The Probability Maze",
+    "type": "technological",
+    "status": "detailed",
+    "environment": "Urban environment where buildings constantly rearrange based on statistical likelihood and quantum uncertainty.",
+    "singularity": "Quantum Architecture - Physical space reshapes based on probability calculations and observer effects.",
+    "inhabitants": "Actuary-Cultists worshipping statistical certainty, Chaos-Walkers navigating through intuition.",
+    "challenges": "Finding stable paths through shifting geometry, avoiding probability storms, solving statistical puzzles.",
+    "resources": "Probability engines, stable materials resisting quantum fluctuation, prediction devices.",
+    "notes": "The maze responds to expectations. Certainty of path increases likelihood of change.",
+    "monsters": ["probability_wraith", "quantum_stalker", "paradox_spawn"],
+    "structures": ["stability_anchor", "calculation_temple", "chaos_market"]
+  }
+}

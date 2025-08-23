@@ -1,0 +1,74 @@
+{
+  "infinite_atrium": {
+    "name": "Infinite Atrium",
+    "type": "artificial",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "A vast entrance hall that extends infinitely upward. The walls are lined with non-Euclidean architecture.",
+        "function": "Primary entrance and orientation point",
+        "hazards": "Spatial disorientation"
+      },
+      {
+        "level": 2,
+        "description": "The geometry actively resists measurement. Each floor above appears larger than the one below.",
+        "materials": "Reality-anchored concrete, probability-locked steel",
+        "features": "Self-repairing architecture, adaptive lighting"
+      },
+      {
+        "level": 3,
+        "description": "The atrium exists in a controlled spatial loop. Those who fall from the infinite height land where they started.",
+        "origin": "First successful Singularity implementation",
+        "notes": "Hidden maintenance tunnels contain the bodies of workers lost in the recursive geometry."
+      }
+    ]
+  },
+  "canopy_settlement": {
+    "name": "Canopy Settlement",
+    "type": "settlement",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Networks of platforms and bridges woven between massive tree branches. Glows with bioluminescent light.",
+        "function": "Rootkin community hub",
+        "hazards": "Unstable branches, territorial defenders"
+      },
+      {
+        "level": 2,
+        "description": "The entire settlement is alive, grown rather than built. Buildings are hollow trees shaped by generations.",
+        "materials": "Living wood, symbiotic vines",
+        "features": "Photosynthetic power, root communication network"
+      },
+      {
+        "level": 3,
+        "description": "Each structure contains the memory-patterns of its creators. The trees dream of the humans they once were.",
+        "origin": "Voluntary colonization during the Green Dream protocol",
+        "notes": "The central tree still receives mail for residents who transformed decades ago."
+      }
+    ]
+  },
+  "memory_oasis": {
+    "name": "Memory Oasis",
+    "type": "anomalous",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Pools of liquid memory surrounded by crystallized time. Drinking grants temporary knowledge.",
+        "function": "Information repository",
+        "hazards": "Memory addiction, identity confusion"
+      },
+      {
+        "level": 2,
+        "description": "Each pool contains extracted memories of specific individuals. Some pools have turned black with trauma.",
+        "materials": "Crystallized temporal essence",
+        "features": "Memory extraction, experience transfer"
+      },
+      {
+        "level": 3,
+        "description": "The oases are mass graves of consciousness. Thousands of minds were drained to create these repositories.",
+        "origin": "Project Mnemonic's 'volunteer' program",
+        "notes": "Sometimes you can hear them screaming in the ripples."
+      }
+    ]
+  }
+}

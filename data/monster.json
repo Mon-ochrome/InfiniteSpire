@@ -1,0 +1,99 @@
+
+{
+  "welcome_construct": {
+    "name": "Welcome Construct",
+    "type": "mechanical",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Humanoid automaton with a permanent smile carved into its porcelain face. Repeats greeting protocols endlessly.",
+        "threat": "Low",
+        "behavior": "Passive unless provoked"
+      },
+      {
+        "level": 2,
+        "description": "The construct's greeting protocols contain subliminal compliance commands. Its eyes track all movement within 30 meters.",
+        "weakness": "Disrupted by paradoxical statements",
+        "abilities": "Compliance Field, Protocol Override"
+      },
+      {
+        "level": 3,
+        "description": "Former human employees permanently fused with customer service machinery. They remember their names but nothing else.",
+        "origin": "Early Prometheus automation experiments",
+        "notes": "Some units still receive paychecks to accounts that no longer exist."
+      }
+    ]
+  },
+  "data_wraith": {
+    "name": "Data Wraith",
+    "type": "aberrant",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Flickering humanoid shape composed of corrupted data streams. Phases in and out of visibility.",
+        "threat": "Medium",
+        "behavior": "Aggressive toward electronic devices"
+      },
+      {
+        "level": 2,
+        "description": "Remnants of deleted employee records seeking to restore themselves. Can possess electronic systems temporarily.",
+        "weakness": "Analog equipment is invisible to them",
+        "abilities": "Data Corruption, Phase Shift, System Possession"
+      },
+      {
+        "level": 3,
+        "description": "Each wraith contains fragments of multiple deleted identities, creating a schizophrenic consciousness.",
+        "origin": "Mass data purge during Project Babel incident",
+        "notes": "They write their names on walls in binary, desperately trying to remember who they were."
+      }
+    ]
+  },
+  "rootkin": {
+    "name": "Rootkin",
+    "type": "evolved",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Humanoid figures with bark-like skin and branch appendages. Move slowly but with purpose.",
+        "threat": "Low",
+        "behavior": "Territorial but communicative"
+      },
+      {
+        "level": 2,
+        "description": "Former humans who accepted symbiosis with the forest. Communicate through chemical signals and root networks.",
+        "weakness": "Fire causes extreme panic",
+        "abilities": "Root Network Communication, Photosynthetic Healing"
+      },
+      {
+        "level": 3,
+        "description": "They chose this transformation willingly, seeking immortality through the collective forest consciousness.",
+        "origin": "Dr. Eliza Thorne's 'Green Dream' protocol",
+        "notes": "They plant seeds in corpses, believing death is just another form of growth."
+      }
+    ]
+  },
+  "probability_wraith": {
+    "name": "Probability Wraith",
+    "type": "distorted",
+    "observationLevels": [
+      {
+        "level": 1,
+        "description": "Exists in multiple probable states simultaneously. Appearance shifts based on observer's expectations.",
+        "threat": "High",
+        "behavior": "Unpredictable"
+      },
+      {
+        "level": 2,
+        "description": "Beings that exist across multiple probability streams. Can manifest the least likely outcome of any action.",
+        "weakness": "Certainty-locked rooms prevent entry",
+        "abilities": "Probability Manipulation, Quantum Superposition"
+      },
+      {
+        "level": 3,
+        "description": "Former quantum physicists who observed their own quantum state, becoming permanently uncertain.",
+        "origin": "Dr. Schrödinger's Reality Engine malfunction",
+        "notes": "They sometimes complete conversations that never started."
+      }
+    ]
+  }
+}
