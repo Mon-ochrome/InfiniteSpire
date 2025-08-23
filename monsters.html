@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Encyclopedia - The Infinite Spire</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>MONSTER ENCYCLOPEDIA</h1>
+        <p>Catalogued entities within the Infinite Spire</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">Home</a>
+        <a href="floors.html" class="nav-tab">Tower Floors</a>
+        <a href="monsters.html" class="nav-tab active">Monster Encyclopedia</a>
+        <a href="structures.html" class="nav-tab">Structures & Biomes</a>
+        <a href="items.html" class="nav-tab">Items & Artifacts</a>
+        <a href="lore.html" class="nav-tab">Research Logs</a>
+        <a href="editor.html" class="nav-tab dm-only" style="display: none;">Database Editor</a>
+    </nav>
+
+    <div class="container">
+        <div class="encyclopedia-filters">
+            <h2 style="color: #ffdd00; margin-bottom: 15px;">Filter Monsters</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Discovered</button>
+                <button class="filter-btn" data-filter="aberrant">Aberrant</button>
+                <button class="filter-btn" data-filter="mechanical">Mechanical</button>
+                <button class="filter-btn" data-filter="evolved">Evolved</button>
+                <button class="filter-btn" data-filter="distorted">Distorted</button>
+                <button class="filter-btn" data-filter="synthetic">Synthetic</button>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <input type="text" id="searchMonsters" class="search-input" placeholder="Search monsters...">
+            </div>
+
+            <div class="dm-only" style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                <h3 style="color: #ffdd00; margin-bottom: 10px;">DM Controls</h3>
+                <button class="btn" onclick="showAllMonsters()">Show All Monsters</button>
+                <button class="btn" onclick="addEncounter()">➕ Add Encounter</button>
+                <button class="btn" onclick="resetObservations()">🔄 Reset Observations</button>
+            </div>
+        </div>
+
+        <div class="encyclopedia-grid" id="monsterGrid">
+            <!-- Monster cards will be generated here -->
+        </div>
+
+        <!-- Encounter Tracker (DM Only) -->
+        <div class="dm-only detail-card" style="margin-top: 30px;">
+            <h3>Quick Encounter Tracker</h3>
+            <p style="color: #888; margin-bottom: 15px;">Track monster encounters to increase player observation levels</p>
+            <div class="edit-form">
+                <div class="form-group">
+                    <label>Monster ID</label>
+                    <select id="encounterMonster">
+                        <!-- Options will be populated -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Number of Observations</label>
+                    <input type="number" id="encounterCount" value="1" min="1" max="3">
+                </div>
+                <button class="btn" onclick="recordEncounter()">Record Encounter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monster Detail Modal -->
+    <div class="modal" id="monsterModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let monsterDatabase = {};
+        let filteredMonsters = [];
+
+        // Initialize page
+        async function initMonsterPage() {
+            // Load monster database
+            monsterDatabase = await loadDatabase('monsters.json');
+            
+            // If in DM mode, populate encounter tracker
+            if (isDMMode()) {
+                populateEncounterTracker();
+            }
+            
+            // Setup event listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    filterMonsters(this.dataset.filter);
+                });
+            });
+            
+            document.getElementById('searchMonsters').addEventListener('input', (e) => {
+                searchMonsters(e.target.value);
+            });
+            
+            // Display monsters
+            displayMonsters();
+        }
+
+        // Display monsters based on current mode and filters
+        function displayMonsters(filter = 'all', searchQuery = '') {
+            const grid = document.getElementById('monsterGrid');
+            const gameState = loadGameState();
+            
+            grid.innerHTML = '';
+            
+            // Filter monsters based on discovery and search
+            let monstersToShow = Object.entries(monsterDatabase).filter(([id, monster]) => {
+                // Check if discovered or in DM mode
+                const isDiscovered = isDMMode() || (gameState.monsterObservations[id] && gameState.monsterObservations[id] > 0);
+                if (!isDiscovered) return false;
+                
+                // Apply type filter
+                if (filter !== 'all' && monster.type !== filter) return false;
+                
+                // Apply search query
+                if (searchQuery) {
+                    const searchText = `${monster.name} ${monster.type} ${monster.observationLevels[0].description}`.toLowerCase();
+                    if (!searchText.includes(searchQuery.toLowerCase())) return false;
+                }
+                
+                return true;
+            });
+            
+            if (monstersToShow.length === 0) {
+                grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1/-1;">No monsters found. Explore more floors to discover new entities!</p>';
+                return;
+            }
+            
+            // Create cards for each monster
+            monstersToShow.forEach(([id, monster]) => {
+                const observations = isDMMode() ? 3 : (gameState.monsterObservations[id] || 1);
+                const card = createMonsterCard(id, monster, observations);
+                grid.appendChild(card);
+            });
+        }
+
+        // Create monster card
+        function createMonsterCard(monsterId, monster, observations) {
+            const maxLevel = Math.min(observations, 3);
+            const currentData = monster.observationLevels[Math.min(maxLevel - 1, monster.observationLevels.length - 1)];
+            
+            const card = document.createElement('div');
+            card.className = 'entity-card';
+            card.dataset.type = monster.type;
+            card.dataset.id = monsterId;
+            
+            card.innerHTML = `
+                <div class="entity-header">
+                    <div class="entity-name">${monster.name}</div>
+                    <div class="observation-level">
+                        ${createObservationPips(maxLevel)}
+                    </div>
+                </div>
+                <div class="entity-type">${monster.type}</div>
+                <div class="entity-description">${currentData.description}</div>
+                <div class="entity-stats">
+                    <div class="stat-item">
+                        <span>Threat:</span>
+                        <span class="stat-value">${currentData.threat || '???'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Behavior:</span>
+                        <span class="stat-value">${currentData.behavior || '???'}</span>
+                    </div>
+                    ${maxLevel >= 2 && currentData.weakness ? `
+                        <div class="stat-item">
+                            <span>Weakness:</span>
+                            <span class="stat-value">${currentData.weakness}</span>
+                        </div>
+                    ` : ''}
+                    ${maxLevel >= 3 && currentData.origin ? `
+                        <div class="stat-item">
+                            <span>Origin:</span>
+                            <span class="stat-value" style="font-size: 0.8em;">${currentData.origin}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                ${maxLevel < 3 && !isDMMode() ? `
+                    <div class="unlock-hint">
+                        Observation Level ${maxLevel}/3 - Continue encounters to unlock more
+                    </div>
+                ` : ''}
+            `;
+            
+            card.addEventListener('click', () => showMonsterDetail(monsterId));
+            return card;
+        }
+
+        // Show detailed monster information
+        function showMonsterDetail(monsterId) {
+            const monster = monsterDatabase[monsterId];
+            if (!monster) return;
+            
+            const gameState = loadGameState();
+            const observations = isDMMode() ? 3 : (gameState.monsterObservations[monsterId] || 1);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h2 style="color: #ffdd00; margin-bottom: 20px;">${monster.name}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Type:</span> 
+                    <span style="color: #e94560; text-transform: uppercase;">${monster.type}</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Observation Level:</span>
+                    <div class="observation-level" style="display: inline-flex; margin-left: 10px;">
+                        ${createObservationPips(observations)}
+                    </div>
+                </div>
+                ${monster.observationLevels.slice(0, observations).map((level, index) => `
+                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-left: 3px solid ${index === observations - 1 ? '#ffdd00' : '#666'};">
+                        <h3 style="color: #ffdd00; margin-bottom: 10px;">Observation Level ${index + 1}</h3>
+                        <p style="color: #b0b0b0; margin-bottom: 10px;">${level.description}</p>
+                        ${level.threat ? `<p><span style="color: #888;">Threat Level:</span> <span style="color: #e94560;">${level.threat}</span></p>` : ''}
+                        ${level.behavior ? `<p><span style="color: #888;">Behavior:</span> <span style="color: #e94560;">${level.behavior}</span></p>` : ''}
+                        ${level.weakness ? `<p><span style="color: #888;">Weakness:</span> <span style="color: #ffdd00;">${level.weakness}</span></p>` : ''}
+                        ${level.abilities ? `<p><span style="color: #888;">Abilities:</span> <span style="color: #e94560;">${level.abilities}</span></p>` : ''}
+                        ${level.origin ? `<p><span style="color: #888;">Origin:</span> <span style="color: #b0b0b0;">${level.origin}</span></p>` : ''}
+                        ${level.notes ? `<p style="margin-top: 10px; font-style: italic; color: #888;">${level.notes}</p>` : ''}
+                    </div>
+                `).join('')}
+                ${observations < 3 && !isDMMode() ? `
+                    <div style="text-align: center; padding: 20px; background: rgba(233,69,96,0.1); border-radius: 5px;">
+                        <p style="color: #888;">Continue observing this entity to unlock more information.</p>
+                        <p style="color: #e94560; margin-top: 10px;">Encounters needed for next level: ${4 - observations}</p>
+                    </div>
+                ` : ''}
+                ${isDMMode() ? `
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                        <h4 style="color: #ffdd00;">DM Information</h4>
+                        <p style="color: #888;">Monster ID: ${monsterId}</p>
+                        <p style="color: #888;">Current Player Observations: ${gameState.monsterObservations[monsterId] || 0}</p>
+                        <button class="btn" onclick="addObservation('monster', '${monsterId}'); location.reload();">Add Player Observation</button>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('monsterModal').classList.add('active');
+        }
+
+        // Filter monsters
+        function filterMonsters(type) {
+            displayMonsters(type, document.getElementById('searchMonsters').value);
+        }
+
+        // Search monsters
+        function searchMonsters(query) {
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            displayMonsters(activeFilter, query);
+        }
+
+        // DM Functions
+        function showAllMonsters() {
+            const grid = document.getElementById('monsterGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(monsterDatabase).forEach(([id, monster]) => {
+                const card = createMonsterCard(id, monster, 3);
+                grid.appendChild(card);
+            });
+        }
+
+        function populateEncounterTracker() {
+            const select = document.getElementById('encounterMonster');
+            if (!select) return;
+            
+            select.innerHTML = Object.entries(monsterDatabase).map(([id, monster]) => 
+                `<option value="${id}">${monster.name} (${id})</option>`
+            ).join('');
+        }
+
+        function recordEncounter() {
+            const monsterId = document.getElementById('encounterMonster').value;
+            const count = parseInt(document.getElementById('encounterCount').value);
+            
+            const state = addObservation('monster', monsterId, count);
+            
+            alert(`Recorded ${count} observation(s) for ${monsterDatabase[monsterId].name}. Total observations: ${state.monsterObservations[monsterId]}`);
+            displayMonsters();
+        }
+
+        function addEncounter() {
+            const monsterId = prompt('Enter monster ID (e.g., "rootkin"):');
+            if (monsterId && monsterDatabase[monsterId]) {
+                addObservation('monster', monsterId);
+                alert(`Added encounter for ${monsterDatabase[monsterId].name}`);
+                displayMonsters();
+            } else {
+                alert('Monster not found!');
+            }
+        }
+
+        function resetObservations() {
+            if (confirm('Reset all monster observations to 0?')) {
+                const state = loadGameState();
+                state.monsterObservations = {};
+                saveGameState(state);
+                displayMonsters();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('monsterModal').classList.remove('active');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initMonsterPage);
+    </script>
+</body>
+</html>

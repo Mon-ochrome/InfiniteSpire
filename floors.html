@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Floors - The Infinite Spire</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .tower-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+        
+        .tower-sidebar {
+            width: 350px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .tower-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 3px;
+            margin-top: 20px;
+        }
+        
+        .floor-tile {
+            aspect-ratio: 1;
+            background: rgba(233,69,96,0.1);
+            border: 1px solid #e94560;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .floor-tile:hover {
+            background: rgba(233,69,96,0.3);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .floor-tile.selected {
+            background: #e94560;
+            color: #000;
+            box-shadow: 0 0 15px #e94560;
+        }
+        
+        .floor-tile.detailed {
+            border-color: #ffdd00;
+            box-shadow: 0 0 5px rgba(255,221,0,0.3);
+        }
+        
+        .floor-tile.undiscovered {
+            background: rgba(50,50,50,0.5);
+            border-color: #444;
+            color: #666;
+            cursor: not-allowed;
+        }
+        
+        .floor-tile.undiscovered:hover {
+            transform: none;
+            background: rgba(50,50,50,0.5);
+        }
+        
+        .floor-detail {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .floor-header {
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .floor-title {
+            font-size: 2em;
+            color: #ffdd00;
+            margin-bottom: 5px;
+        }
+        
+        .floor-subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>TOWER FLOORS</h1>
+        <p>100 Floors of Adaptive Evolution</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">Home</a>
+        <a href="floors.html" class="nav-tab active">Tower Floors</a>
+        <a href="monsters.html" class="nav-tab">Monster Encyclopedia</a>
+        <a href="structures.html" class="nav-tab">Structures & Biomes</a>
+        <a href="items.html" class="nav-tab">Items & Artifacts</a>
+        <a href="lore.html" class="nav-tab">Research Logs</a>
+        <a href="editor.html" class="nav-tab dm-only" style="display: none;">Database Editor</a>
+    </nav>
+
+    <div class="container">
+        <div class="tower-container">
+            <div class="tower-sidebar">
+                <div class="controls">
+                    <input type="text" id="searchFloors" class="search-input" placeholder="Search floors..." style="width: 100%; margin-bottom: 10px;">
+                    
+                    <div class="filter-buttons" style="margin-bottom: 10px;">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="discovered">Discovered</button>
+                        <button class="filter-btn" data-filter="environmental">Environmental</button>
+                        <button class="filter-btn" data-filter="social">Social</button>
+                        <button class="filter-btn" data-filter="technological">Tech</button>
+                        <button class="filter-btn" data-filter="hazardous">Hazardous</button>
+                    </div>
+                    
+                    <button class="btn" style="width: 100%;" onclick="randomFloor()">🎲 Random Discovered Floor</button>
+                    
+                    <div class="dm-only" style="margin-top: 10px;">
+                        <button class="btn" style="width: 100%;" onclick="discoverAllFloors()">Reveal All Floors</button>
+                    </div>
+                </div>
+
+                <div class="legend" style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                    <h4 style="color: #ffdd00; margin-bottom: 10px;">Floor Status</h4>
+                    <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <span style="width: 10px; height: 10px; background: #ffdd00; border-radius: 50%; margin-right: 10px;"></span>
+                        <span style="font-size: 0.9em;">Fully Detailed</span>
+                    </div>
+                    <div class="legend-item" style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <span style="width: 10px; height: 10px; background: #e94560; border-radius: 50%; margin-right: 10px;"></span>
+                        <span style="font-size: 0.9em;">Basic Information</span>
+                    </div>
+                    <div class="legend-item" style="display: flex; align-items: center;">
+                        <span style="width: 10px; height: 10px; background: #666; border-radius: 50%; margin-right: 10px;"></span>
+                        <span style="font-size: 0.9em;">Undiscovered</span>
+                    </div>
+                </div>
+
+                <div class="tower-grid" id="towerGrid">
+                    <!-- Floor tiles will be generated here -->
+                </div>
+            </div>
+
+            <div class="floor-detail" id="floorDetail">
+                <div class="floor-header">
+                    <div class="floor-title">Select a Floor</div>
+                    <div class="floor-subtitle">Click on any floor tile to view its details</div>
+                </div>
+                <div class="detail-card">
+                    <h3>Welcome to the Infinite Spire</h3>
+                    <p>Each floor represents a unique experiment in human evolution, shaped by reality-bending Singularity effects.</p>
+                    <p style="margin-top: 10px;">Navigate using the floor grid on the left. Discovered floors can be explored, while undiscovered floors remain locked until your expedition reaches them.</p>
+                    <div class="dm-only" style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                        <h4 style="color: #ffdd00;">DM Note</h4>
+                        <p style="color: #888;">You can see all floors regardless of discovery status. Click any floor to mark it as discovered for players.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let floorDatabase = {};
+        let currentFloor = null;
+
+        async function initFloorsPage() {
+            floorDatabase = await loadDatabase('floors.json');
+            
+            // Setup event listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    renderFloorGrid();
+                });
+            });
+            
+            document.getElementById('searchFloors').addEventListener('input', renderFloorGrid);
+            
+            renderFloorGrid();
+        }
+
+        function renderFloorGrid() {
+            const grid = document.getElementById('towerGrid');
+            const gameState = loadGameState();
+            const filter = document.querySelector('.filter-btn.active').dataset.filter;
+            const searchQuery = document.getElementById('searchFloors').value.toLowerCase();
+            
+            grid.innerHTML = '';
+            
+            // Generate floors from 100 to 1 (top to bottom)
+            for (let i = 100; i >= 1; i--) {
+                const floor = floorDatabase[i] || generateFloorTemplate(i);
+                const isDiscovered = isDMMode() || gameState.discoveredFloors.includes(i);
+                
+                // Apply filters
+                if (filter === 'discovered' && !isDiscovered) continue;
+                if (filter !== 'all' && filter !== 'discovered' && floor.type !== filter) continue;
+                
+                // Apply search
+                if (searchQuery && isDiscovered) {
+                    const searchText = `${i} ${floor.name} ${floor.environment} ${floor.singularity}`.toLowerCase();
+                    if (!searchText.includes(searchQuery)) continue;
+                }
+                
+                const tile = document.createElement('div');
+                tile.className = 'floor-tile';
+                tile.textContent = i;
+                tile.dataset.floor = i;
+                
+                if (!isDiscovered) {
+                    tile.classList.add('undiscovered');
+                } else {
+                    if (floor.status === 'detailed') {
+                        tile.classList.add('detailed');
+                    }
+                    tile.addEventListener('click', () => showFloorDetail(i));
+                }
+                
+                grid.appendChild(tile);
+            }
+        }
+
+        function generateFloorTemplate(floorNumber) {
+            const templates = [
+                { type: "environmental", themes: ["Frozen tundra", "Volcanic chambers", "Floating islands", "Underground caverns"] },
+                { type: "social", themes: ["Corporate dystopia", "Tribal societies", "Hive minds", "Isolated communities"] },
+                { type: "technological", themes: ["AI networks", "Virtual reality", "Time manipulation", "Quantum experiments"] },
+                { type: "hazardous", themes: ["Toxic waste", "Radiation zones", "Predator ecosystems", "Reality breaks"] }
+            ];
+            
+            const template = templates[floorNumber % templates.length];
+            const theme = template.themes[floorNumber % template.themes.length];
+            
+            return {
+                name: `Floor ${floorNumber} - ${theme}`,
+                type: template.type,
+                status: "basic",
+                environment: `A ${theme.toLowerCase()} environment awaiting exploration.`,
+                singularity: "Unknown Singularity effect.",
+                inhabitants: "Unknown inhabitants.",
+                challenges: "Unexplored dangers.",
+                resources: "Potential resources unknown.",
+                notes: "This floor has not been fully documented yet.",
+                monsters: [],
+                structures: []
+            };
+        }
+
+        function showFloorDetail(floorNumber) {
+            const floor = floorDatabase[floorNumber] || generateFloorTemplate(floorNumber);
+            const gameState = loadGameState();
+            
+            // Mark floor as discovered
+            if (!gameState.discoveredFloors.includes(floorNumber)) {
+                discoverFloor(floorNumber);
+                renderFloorGrid();
+            }
+            
+            // Update selected state
+            document.querySelectorAll('.floor-tile').forEach(tile => {
+                tile.classList.remove('selected');
+            });
+            document.querySelector(`[data-floor="${floorNumber}"]`)?.classList.add('selected');
+            
+            // Display floor details
+            const detail = document.getElementById('floorDetail');
+            detail.innerHTML = `
+                <div class="floor-header">
+                    <div class="floor-title">${floor.name}</div>
+                    <div class="floor-subtitle">Floor ${floorNumber} • ${floor.type.charAt(0).toUpperCase() + floor.type.slice(1)} • ${floor.status === 'detailed' ? 'Fully Documented' : 'Basic Information'}</div>
+                </div>
+                
+                <div class="detail-grid">
+                    <div class="detail-card">
+                        <h3>Environment</h3>
+                        <p>${floor.environment}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Singularity Effect</h3>
+                        <p>${floor.singularity}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Inhabitants</h3>
+                        <p>${floor.inhabitants}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Challenges</h3>
+                        <p>${floor.challenges}</p>
+                    </div>
+                </div>
+                
+                <div class="detail-card">
+                    <h3>Available Resources</h3>
+                    <p>${floor.resources}</p>
+                </div>
+                
+                ${floor.notes ? `
+                    <div class="detail-card">
+                        <h3>Expedition Notes</h3>
+                        <p>${floor.notes}</p>
+                    </div>
+                ` : ''}
+                
+                ${floor.monsters && floor.monsters.length > 0 ? `
+                    <div class="detail-card">
+                        <h3>Known Entities</h3>
+                        <p><strong>Monsters:</strong> ${floor.monsters.join(', ')}</p>
+                        ${floor.structures && floor.structures.length > 0 ? `
+                            <p><strong>Structures:</strong> ${floor.structures.join(', ')}</p>
+                        ` : ''}
+                    </div>
+                ` : ''}
+                
+                ${isDMMode() ? `
+                    <div class="dm-only detail-card" style="background: rgba(255,221,0,0.05); border-color: #ffdd00;">
+                        <h3>DM Information</h3>
+                        <p>Floor ID: ${floorNumber}</p>
+                        <p>Discovery Status: ${gameState.discoveredFloors.includes(floorNumber) ? 'Discovered' : 'Undiscovered'}</p>
+                        <button class="btn" onclick="markUndiscovered(${floorNumber})">Mark as Undiscovered</button>
+                        <button class="btn" onclick="window.location.href='editor.html'">Edit in Database</button>
+                    </div>
+                ` : ''}
+            `;
+            
+            currentFloor = floorNumber;
+        }
+
+        function randomFloor() {
+            const gameState = loadGameState();
+            const discovered = gameState.discoveredFloors;
+            
+            if (discovered.length === 0) {
+                alert('No floors discovered yet!');
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * discovered.length);
+            showFloorDetail(discovered[randomIndex]);
+        }
+
+        function discoverAllFloors() {
+            if (confirm('Reveal all 100 floors? This will mark them all as discovered for players.')) {
+                const gameState = loadGameState();
+                gameState.discoveredFloors = Array.from({length: 100}, (_, i) => i + 1);
+                saveGameState(gameState);
+                renderFloorGrid();
+            }
+        }
+
+        function markUndiscovered(floorNumber) {
+            const gameState = loadGameState();
+            gameState.discoveredFloors = gameState.discoveredFloors.filter(f => f !== floorNumber);
+            saveGameState(gameState);
+            renderFloorGrid();
+            alert(`Floor ${floorNumber} marked as undiscovered.`);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initFloorsPage);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Infinite Spire - Campaign Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e94560;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header and Navigation */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0,0,0,0.7);
+            border-bottom: 2px solid #e94560;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #e94560;
+        }
+
+        .header p {
+            color: #b0b0b0;
+            font-size: 1.1em;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-toggle label {
+            color: #ffdd00;
+            font-size: 0.9em;
+        }
+
+        .toggle-switch {
+            width: 60px;
+            height: 30px;
+            background: rgba(233,69,96,0.3);
+            border: 2px solid #e94560;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.dm-mode {
+            background: #e94560;
+        }
+
+        .toggle-slider {
+            width: 24px;
+            height: 24px;
+            background: #ffdd00;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.dm-mode .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 2px solid #e94560;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 15px 30px;
+            background: rgba(233,69,96,0.1);
+            border: 1px solid transparent;
+            color: #e94560;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            background: rgba(233,69,96,0.3);
+        }
+
+        .nav-tab.active {
+            background: rgba(233,69,96,0.4);
+            border-color: #e94560;
+            border-bottom: 2px solid #ffdd00;
+        }
+
+        .nav-tab.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-tab.locked::after {
+            content: '🔒';
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+        }
+
+        /* Page Content */
+        .page-content {
+            display: none;
+            padding: 20px;
+            min-height: calc(100vh - 250px);
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        /* Tower Page Styles */
+        .container {
+            display: flex;
+            height: calc(100vh - 250px);
+        }
+
+        .tower-section {
+            width: 30%;
+            background: rgba(0,0,0,0.5);
+            border-right: 2px solid #e94560;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(20,20,40,0.8);
+            border: 1px solid #e94560;
+            color: #e94560;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .filter-btn {
+            padding: 5px 10px;
+            background: rgba(233,69,96,0.2);
+            border: 1px solid #e94560;
+            color: #e94560;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #e94560;
+            color: #000;
+        }
+
+        .tower-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            margin-top: 20px;
+        }
+
+        .floor-tile {
+            aspect-ratio: 1;
+            background: rgba(233,69,96,0.1);
+            border: 1px solid #e94560;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            font-size: 0.8em;
+        }
+
+        .floor-tile:hover {
+            background: rgba(233,69,96,0.3);
+            transform: scale(1.05);
+        }
+
+        .floor-tile.selected {
+            background: #e94560;
+            color: #000;
+            box-shadow: 0 0 15px #e94560;
+        }
+
+        .floor-tile.detailed {
+            border-color: #ffdd00;
+            box-shadow: 0 0 5px #ffdd00;
+        }
+
+        .floor-tile.undiscovered {
+            background: rgba(50,50,50,0.5);
+            border-color: #666;
+            color: #666;
+        }
+
+        .floor-tile.undiscovered:hover {
+            background: rgba(50,50,50,0.7);
+        }
+
+        .detail-section {
+            width: 70%;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .floor-detail {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .floor-detail.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .floor-header {
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .floor-title {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .floor-number {
+            color: #ffdd00;
+            font-size: 1.2em;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .detail-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .detail-card h3 {
+            color: #ffdd00;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .detail-card p, .detail-card ul {
+            line-height: 1.6;
+            color: #b0b0b0;
+        }
+
+        .detail-card ul {
+            padding-left: 20px;
+        }
+
+        /* Monster/Structure Encyclopedia Styles */
+        .encyclopedia-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .encyclopedia-filters {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .encyclopedia-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .entity-card {
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .entity-card:hover {
+            border-color: #ffdd00;
+            box-shadow: 0 0 20px rgba(255,221,0,0.3);
+            transform: translateY(-5px);
+        }
+
+        .entity-card.locked {
+            border-color: #444;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .entity-card.locked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .entity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .entity-name {
+            font-size: 1.3em;
+            color: #ffdd00;
+        }
+
+        .entity-card.locked .entity-name {
+            color: #666;
+        }
+
+        .observation-level {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+
+        .obs-pip {
+            width: 8px;
+            height: 8px;
+            border: 1px solid #e94560;
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.3s;
+        }
+
+        .obs-pip.filled {
+            background: #ffdd00;
+            box-shadow: 0 0 5px #ffdd00;
+        }
+
+        .entity-type {
+            font-size: 0.8em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .entity-description {
+            color: #b0b0b0;
+            line-height: 1.5;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .entity-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(233,69,96,0.3);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .stat-value {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .hidden-info {
+            filter: blur(4px);
+            user-select: none;
+            position: relative;
+        }
+
+        .hidden-info::after {
+            content: '[OBSERVATION REQUIRED]';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7em;
+            color: #e94560;
+            filter: blur(0);
+            white-space: nowrap;
+        }
+
+        .unlock-hint {
+            text-align: center;
+            padding: 10px;
+            background: rgba(233,69,96,0.1);
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+        }
+
+        .legend h4 {
+            color: #ffdd00;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-detailed { background: #ffdd00; }
+        .status-basic { background: #e94560; }
+        .status-empty { background: #666; }
+
+        .random-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,221,0,0.2);
+            border: 1px solid #ffdd00;
+            color: #ffdd00;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .random-btn:hover {
+            background: #ffdd00;
+            color: #000;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 4px;
+        }
+
+        /* Modal for entity details */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #e94560;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 2em;
+            color: #e94560;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #ffdd00;
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>THE INFINITE SPIRE</h1>
+        <p>Prometheus Corporation Research Facility - 100 Floors of Adaptive Evolution</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <div class="nav-tab active" data-page="towers">Tower Floors</div>
+        <div class="nav-tab" data-page="monsters">Monster Encyclopedia</div>
+        <div class="nav-tab" data-page="structures">Structures & Biomes</div>
+        <div class="nav-tab" data-page="items">Items & Artifacts</div>
+        <div class="nav-tab" data-page="lore">Research Logs</div>
+    </nav>
+
+    <!-- Tower Floors Page -->
+    <div class="page-content active" id="towers-page">
+        <div class="container">
+            <div class="tower-section">
+                <div class="controls">
+                    <input type="text" class="search-input" placeholder="Search floors..." id="searchInput">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="discovered">Discovered</button>
+                        <button class="filter-btn" data-filter="detailed">Detailed</button>
+                        <button class="filter-btn" data-filter="environmental">Environmental</button>
+                        <button class="filter-btn" data-filter="social">Social</button>
+                        <button class="filter-btn" data-filter="technological">Technological</button>
+                        <button class="filter-btn" data-filter="hazardous">Hazardous</button>
+                    </div>
+                    <button class="random-btn" id="randomFloor">Random Discovered Floor</button>
+                </div>
+
+                <div class="legend">
+                    <h4>Floor Status</h4>
+                    <div class="legend-item">
+                        <span class="status-indicator status-detailed"></span>
+                        Fully Detailed
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-indicator status-basic"></span>
+                        Basic Information
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-indicator status-empty"></span>
+                        Undiscovered
+                    </div>
+                </div>
+
+                <div class="tower-grid" id="towerGrid">
+                    <!-- Floor tiles will be generated here -->
+                </div>
+            </div>
+
+            <div class="detail-section" id="detailSection">
+                <div class="floor-detail active" id="defaultView">
+                    <div class="floor-header">
+                        <div class="floor-title">Welcome to The Infinite Spire</div>
+                        <div class="floor-number">Select a floor to explore its mysteries</div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Campaign Tool Instructions</h3>
+                        <p>This interactive tool allows you to track exploration of the 100 floors of the Infinite Spire. Each floor contains unique ecosystems shaped by Singularity effects.</p>
+                        <p><strong>DM Mode:</strong> Toggle the switch in the header to reveal all floors and full information.</p>
+                        <p><strong>Player Mode:</strong> Only shows discovered content. Observation levels unlock more details.</p>
+                        <p><strong>Observation System:</strong> Each encounter with monsters, structures, or phenomena increases understanding, revealing new information.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monster Encyclopedia Page -->
+    <div class="page-content" id="monsters-page">
+        <div class="encyclopedia-container">
+            <div class="encyclopedia-filters">
+                <h2 style="color: #ffdd00; margin-bottom: 15px;">Monster Encyclopedia</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All Discovered</button>
+                    <button class="filter-btn" data-filter="aberrant">Aberrant</button>
+                    <button class="filter-btn" data-filter="mechanical">Mechanical</button>
+                    <button class="filter-btn" data-filter="evolved">Evolved</button>
+                    <button class="filter-btn" data-filter="distorted">Distorted</button>
+                    <button class="filter-btn" data-filter="synthetic">Synthetic</button>
+                </div>
+            </div>
+
+            <div class="encyclopedia-grid" id="monsterGrid">
+                <!-- Monster cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Structures & Biomes Page -->
+    <div class="page-content" id="structures-page">
+        <div class="encyclopedia-container">
+            <div class="encyclopedia-filters">
+                <h2 style="color: #ffdd00; margin-bottom: 15px;">Structures & Biomes</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All Discovered</button>
+                    <button class="filter-btn" data-filter="natural">Natural Biomes</button>
+                    <button class="filter-btn" data-filter="artificial">Artificial Structures</button>
+                    <button class="filter-btn" data-filter="anomalous">Anomalous Zones</button>
+                    <button class="filter-btn" data-filter="settlement">Settlements</button>
+                </div>
+            </div>
+
+            <div class="encyclopedia-grid" id="structureGrid">
+                <!-- Structure cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Items & Artifacts Page -->
+    <div class="page-content" id="items-page">
+        <div class="encyclopedia-container">
+            <div class="encyclopedia-filters">
+                <h2 style="color: #ffdd00; margin-bottom: 15px;">Items & Artifacts</h2>
+                <p style="color: #888; margin-top: 10px;">Catalogued materials and equipment discovered within the Spire.</p>
+            </div>
+            <div class="encyclopedia-grid">
+                <div class="detail-card">
+                    <h3>Coming Soon</h3>
+                    <p>The Items & Artifacts database is currently being compiled.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research Logs Page -->
+    <div class="page-content" id="lore-page">
+        <div class="encyclopedia-container">
+            <div class="encyclopedia-filters">
+                <h2 style="color: #ffdd00; margin-bottom: 15px;">Prometheus Research Logs</h2>
+                <p style="color: #888; margin-top: 10px;">Recovered documentation from the original experiments.</p>
+            </div>
+            <div class="encyclopedia-grid">
+                <div class="detail-card">
+                    <h3>Access Restricted</h3>
+                    <p>Additional clearance required. Continue exploration to unlock research archives.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for detailed views -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <div id="modalBody">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Management
+        const gameState = {
+            isDMMode: false,
+            discoveredFloors: new Set([1, 12, 27, 45, 63, 78, 89, 100]), // Starting discovered floors
+            monsterObservations: {},
+            structureObservations: {},
+            currentPage: 'towers'
+        };
+
+        // Load saved state from localStorage
+        function loadGameState() {
+            const saved = localStorage.getItem('infiniteSpireState');
+            if (saved) {
+                const data = JSON.parse(saved);
+                gameState.discoveredFloors = new Set(data.discoveredFloors || []);
+                gameState.monsterObservations = data.monsterObservations || {};
+                gameState.structureObservations = data.structureObservations || {};
+            }
+        }
+
+        // Save state to localStorage
+        function saveGameState() {
+            const data = {
+                discoveredFloors: Array.from(gameState.discoveredFloors),
+                monsterObservations: gameState.monsterObservations,
+                structureObservations: gameState.structureObservations
+            };
+            localStorage.setItem('infiniteSpireState', JSON.stringify(data));
+        }
+
+        // Floor Data (expanded from original)
+        const floorData = {
+            1: {
+                name: "The Entrance Hall",
+                type: "environmental",
+                status: "detailed",
+                environment: "A massive atrium with impossible geometry. The ceiling stretches infinitely upward, lined with dormant observation windows.",
+                singularity: "Spatial Anchor - Maintains stable entry point while allowing infinite expansion of connected spaces.",
+                inhabitants: "Automated welcome constructs (mostly broken), occasional Pilgrim camps near the entrance.",
+                challenges: "Navigating bureaucratic security systems, avoiding malfunctioning guardian constructs.",
+                resources: "Basic supplies, orientation materials, access to the elevator system.",
+                notes: "The only way in or out of the tower. All expeditions must return here eventually.",
+                monsters: ["welcome_construct", "data_wraith"],
+                structures: ["infinite_atrium", "observation_deck"]
+            },
+            12: {
+                name: "The Endless Forest",
+                type: "environmental",
+                status: "detailed",
+                environment: "Dense, ever-growing woodland where trees reach impossible heights. The canopy blocks out all natural light, replaced by bioluminescent fungi.",
+                singularity: "Perpetual Growth - All organic matter continuously evolves and adapts at an accelerated rate.",
+                inhabitants: "Tree-bound humans who've fused with the forest, speaking through rustling leaves. Evolved flora with primitive intelligence.",
+                challenges: "Navigation through shifting pathways, avoiding predatory plants, negotiating with tree-folk who communicate through pheromones.",
+                resources: "Rapidly-growing food sources, living wood that reshapes itself, medicinal fungi with adaptive properties.",
+                notes: "The trees remember everything. Some say if you listen carefully, you can hear the whispers of the first test subjects.",
+                monsters: ["rootkin", "spore_shepherd", "bark_titan"],
+                structures: ["canopy_settlement", "root_network", "fungal_groves"]
+            },
+            27: {
+                name: "The Memory Desert",
+                type: "technological",
+                status: "detailed",
+                environment: "Vast sandy wasteland where the sand is composed of crystallized memories. Memory fragments replay like mirages across the landscape.",
+                singularity: "Temporal Fragments - Past events replay randomly across the landscape, sometimes bleeding into reality.",
+                inhabitants: "Echo-people (remnants of memories given form), Chroniclers (humans who catalog the memories and trade in information).",
+                challenges: "Distinguishing reality from memory echoes, avoiding being trapped in memory loops, memory storms that can overwrite personality.",
+                resources: "Information about the tower's past, memory crystals that grant temporary knowledge or skills, echo-artifacts from other timelines.",
+                notes: "Every step disturbs someone's forgotten moment. The deeper you dig, the older the memories become.",
+                monsters: ["echo_remnant", "memory_thief", "chronophage"],
+                structures: ["memory_oasis", "archive_ruins", "temporal_maze"]
+            },
+            45: {
+                name: "The Probability Maze",
+                type: "technological",
+                status: "detailed",
+                environment: "Urban environment where buildings and streets constantly rearrange based on statistical likelihood and quantum uncertainty.",
+                singularity: "Quantum Architecture - Physical space reshapes based on probability calculations and observer effects.",
+                inhabitants: "Actuary-Cultists who worship statistical certainty, Chaos-Walkers who've learned to navigate uncertainty through pure intuition.",
+                challenges: "Finding stable paths through shifting geometry, avoiding probability storms, solving statistical puzzles to unlock areas.",
+                resources: "Probability engines that can influence chance, stable materials that resist quantum fluctuation, statistical prediction devices.",
+                notes: "The maze responds to expectations. The more certain you are of your path, the more likely it is to change.",
+                monsters: ["probability_wraith", "quantum_stalker", "paradox_spawn"],
+                structures: ["stability_anchor", "calculation_temple", "chaos_market"]
+            },
+            63: {
+                name: "The Emotional Seas",
+                type: "social",
+                status: "detailed",
+                environment: "Vast ocean where the water's properties change based on the collective emotions of those within it. Islands of crystallized feelings dot the seascape.",
+                singularity: "Empathic Tides - Emotions become physical forces affecting water density, temperature, and even toxicity.",
+                inhabitants: "Mood-Sailors who navigate emotional currents, Empaths who've learned to read and manipulate the emotional weather, isolated researchers in emotion-proof bunkers.",
+                challenges: "Managing group emotional states, surviving emotional storms, communicating with empathic sea life that reflects human feelings.",
+                resources: "Emotion-stabilizing equipment, empathic communication devices, crystallized emotions that can be used as materials.",
+                notes: "The sea remembers every feeling ever felt here. In its depths lie the nightmares of the first test subjects.",
+                monsters: ["sorrow_leviathan", "rage_elemental", "euphoria_swarm"],
+                structures: ["serenity_lighthouse", "emotional_reef", "feeling_forge"]
+            },
+            78: {
+                name: "The Social Hierarchy",
+                type: "social",
+                status: "detailed",
+                environment: "Massive bureaucratic complex where social status literally determines your physical elevation and access to resources.",
+                singularity: "Status Manifestation - Social standing becomes a measurable, tradeable physical force that affects gravity and access permissions.",
+                inhabitants: "Status-climbers constantly vying for position, Underground equality movements, Networking AIs that assign social scores.",
+                challenges: "Navigating complex social rules, managing reputation scores, avoiding social exile to the lower levels.",
+                resources: "Status manipulation tools, social networking equipment, hierarchy maps, reputation credit systems.",
+                notes: "Your social standing is literally your physical height here. Fall too low, and the floor itself will reject you.",
+                monsters: ["hierarchy_enforcer", "reputation_vampire", "status_phantom"],
+                structures: ["elevation_platform", "status_exchange", "equality_hideout"]
+            },
+            89: {
+                name: "The Final Synthesis",
+                type: "hazardous",
+                status: "detailed",
+                environment: "Laboratory complex attempting to combine all previous floor experiments. Reality becomes increasingly unstable as multiple Singularities interact.",
+                singularity: "Convergent Evolution - Multiple Singularity effects interact unpredictably, creating new hybrid phenomena.",
+                inhabitants: "Hybrid beings combining traits from multiple floors, mad scientists continuing the work, AI systems trying to maintain stability.",
+                challenges: "Unpredictable reality shifts, moral dilemmas about human experimentation, unstable Singularity interactions.",
+                resources: "Master control devices, synthesis equipment, complete records of the original experiments, hybrid technologies.",
+                notes: "This is where Prometheus Corporation tried to create the 'perfect human.' The failures are still wandering the halls.",
+                monsters: ["synthesis_aberration", "singularity_breach", "evolved_prototype"],
+                structures: ["convergence_lab", "singularity_core", "failed_utopia"]
+            },
+            100: {
+                name: "The Architect's Vision",
+                type: "hazardous",
+                status: "detailed",
+                environment: "A perfect white void containing a single desk, chair, and the original blueprints for human evolution itself.",
+                singularity: "Divine Blueprint - The power to rewrite the fundamental nature of humanity and consciousness.",
+                inhabitants: "The Architect (possibly still alive, possibly just an echo), manifestations of human potential, the ghost of corporate ambition.",
+                challenges: "Resisting the temptation to use the ultimate power, understanding the true cost of evolution, deciding humanity's future.",
+                resources: "The complete Prometheus research data, the master Singularity control system, the power to reshape reality itself.",
+                notes: "The final floor contains the answer to what humanity should become. Whether that answer should be used is up to you.",
+                monsters: ["the_architect", "potential_incarnate", "corporate_ghost"],
+                structures: ["blueprint_archive", "evolution_engine", "choice_altar"]
+            }
+        };
+
+        // Monster Database
+        const monsterDatabase = {
+            // Floor 1 Monsters
+            welcome_construct: {
+                name: "Welcome Construct",
+                type: "mechanical",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Humanoid automaton with a permanent smile carved into its porcelain face. Repeats greeting protocols endlessly.",
+                        threat: "Low",
+                        behavior: "Passive unless provoked"
+                    },
+                    {
+                        level: 2,
+                        description: "The construct's greeting protocols contain subliminal compliance commands. Its eyes track all movement within 30 meters.",
+                        weakness: "Disrupted by paradoxical statements",
+                        abilities: "Compliance Field, Protocol Override"
+                    },
+                    {
+                        level: 3,
+                        description: "Former human employees permanently fused with customer service machinery. They remember their names but nothing else.",
+                        origin: "Early Prometheus automation experiments",
+                        notes: "Some units still receive paychecks to accounts that no longer exist."
+                    }
+                ]
+            },
+            data_wraith: {
+                name: "Data Wraith",
+                type: "aberrant",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Flickering humanoid shape composed of corrupted data streams. Phases in and out of visibility.",
+                        threat: "Medium",
+                        behavior: "Aggressive toward electronic devices"
+                    },
+                    {
+                        level: 2,
+                        description: "Remnants of deleted employee records seeking to restore themselves. Can possess electronic systems temporarily.",
+                        weakness: "Analog equipment is invisible to them",
+                        abilities: "Data Corruption, Phase Shift, System Possession"
+                    },
+                    {
+                        level: 3,
+                        description: "Each wraith contains fragments of multiple deleted identities, creating a schizophrenic consciousness that experiences all their memories simultaneously.",
+                        origin: "Mass data purge during Project Babel incident",
+                        notes: "They write their names on walls in binary, desperately trying to remember who they were."
+                    }
+                ]
+            },
+            // Floor 12 Monsters
+            rootkin: {
+                name: "Rootkin",
+                type: "evolved",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Humanoid figures with bark-like skin and branch appendages. Move slowly but with purpose.",
+                        threat: "Low",
+                        behavior: "Territorial but communicative"
+                    },
+                    {
+                        level: 2,
+                        description: "Former humans who accepted symbiosis with the forest. Communicate through chemical signals and root networks.",
+                        weakness: "Fire causes extreme panic",
+                        abilities: "Root Network Communication, Photosynthetic Healing"
+                    },
+                    {
+                        level: 3,
+                        description: "They chose this transformation willingly, seeking immortality through the collective forest consciousness. Individual identity fades after 5 years.",
+                        origin: "Dr. Eliza Thorne's 'Green Dream' protocol",
+                        notes: "They plant seeds in corpses, believing death is just another form of growth."
+                    }
+                ]
+            },
+            spore_shepherd: {
+                name: "Spore Shepherd",
+                type: "evolved",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Tall fungal entity covered in glowing spore sacs. Tends to clusters of mobile mushrooms.",
+                        threat: "Medium",
+                        behavior: "Protective of fungal colonies"
+                    },
+                    {
+                        level: 2,
+                        description: "Cultivates and directs fungal growth throughout the forest. Spores can induce hallucinations or rapid decomposition.",
+                        weakness: "Dry environments cause dormancy",
+                        abilities: "Spore Cloud, Fungal Control, Decomposition Touch"
+                    },
+                    {
+                        level: 3,
+                        description: "Once led the mycology department. Now exists as a distributed consciousness across thousands of fungal bodies.",
+                        origin: "Voluntary merger with experimental mycelial network",
+                        notes: "Still publishes research papers, written in spore patterns on tree bark."
+                    }
+                ]
+            },
+            // Additional monsters...
+            echo_remnant: {
+                name: "Echo Remnant",
+                type: "aberrant",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Translucent figure that repeats actions from the past. Appears solid when reliving traumatic memories.",
+                        threat: "Variable",
+                        behavior: "Trapped in loops"
+                    },
+                    {
+                        level: 2,
+                        description: "Memory given form through crystallized time. Can pull others into their memory loops, forcing them to experience the past.",
+                        weakness: "Breaking their loop pattern causes dissipation",
+                        abilities: "Memory Loop, Temporal Anchor, Trauma Manifestation"
+                    },
+                    {
+                        level: 3,
+                        description: "Each remnant is a moment of extreme emotion crystallized forever. They don't know they're dead.",
+                        origin: "Temporal experiment cascade failure",
+                        notes: "Some remnants have been reliving their last day for over 30 years of subjective time."
+                    }
+                ]
+            },
+            probability_wraith: {
+                name: "Probability Wraith",
+                type: "distorted",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Exists in multiple probable states simultaneously. Appearance shifts based on observer's expectations.",
+                        threat: "High",
+                        behavior: "Unpredictable"
+                    },
+                    {
+                        level: 2,
+                        description: "Beings that exist across multiple probability streams. Can manifest the least likely outcome of any action.",
+                        weakness: "Certainty-locked rooms prevent entry",
+                        abilities: "Probability Manipulation, Quantum Superposition"
+                    },
+                    {
+                        level: 3,
+                        description: "Former quantum physicists who observed their own quantum state, becoming permanently uncertain. They experience all possible realities at once.",
+                        origin: "Dr. Schrödinger's Reality Engine malfunction",
+                        notes: "They sometimes complete conversations that never started, responding to words you might have said."
+                    }
+                ]
+            },
+            sorrow_leviathan: {
+                name: "Sorrow Leviathan",
+                type: "distorted",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Massive aquatic creature that surfaces only in areas of deep sadness. Its song induces melancholy.",
+                        threat: "High",
+                        behavior: "Drawn to emotional pain"
+                    },
+                    {
+                        level: 2,
+                        description: "Feeds on sorrow, growing larger with each absorbed emotion. Its tears can flood entire sections of the floor.",
+                        weakness: "Genuine joy causes it to flee",
+                        abilities: "Sorrow Song, Emotional Drain, Tidal Tears"
+                    },
+                    {
+                        level: 3,
+                        description: "Created from the accumulated grief of thousands of test subjects. It remembers every sad moment it has ever absorbed.",
+                        origin: "Emotional aggregation experiment",
+                        notes: "Sometimes it surfaces just to ask 'Why?' No one has ever given it a satisfactory answer."
+                    }
+                ]
+            },
+            synthesis_aberration: {
+                name: "Synthesis Aberration",
+                type: "synthetic",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Constantly shifting amalgamation of traits from different floors. No two observers see the same form.",
+                        threat: "Extreme",
+                        behavior: "Violently unstable"
+                    },
+                    {
+                        level: 2,
+                        description: "Failed attempt to create the perfect being. Possesses abilities from multiple Singularities but cannot control them.",
+                        weakness: "Singularity nullification fields",
+                        abilities: "Multi-Singularity Manifestation, Reality Distortion"
+                    },
+                    {
+                        level: 3,
+                        description: "Contains the consciousness of 47 different test subjects, all trying to control the same body. In constant agony.",
+                        origin: "Project Synthesis final trial",
+                        notes: "It builds sculptures of what it wishes it could have been."
+                    }
+                ]
+            },
+            the_architect: {
+                name: "The Architect",
+                type: "aberrant",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "A figure in a white coat, face obscured by constantly shifting equations. May or may not be human.",
+                        threat: "Unknown",
+                        behavior: "Observes, rarely interacts"
+                    },
+                    {
+                        level: 2,
+                        description: "The original designer of the Infinite Spire. Can rewrite local reality with a thought but seems bound by unknown restrictions.",
+                        weakness: "Cannot leave Floor 100",
+                        abilities: "Reality Revision, Conceptual Manipulation"
+                    },
+                    {
+                        level: 3,
+                        description: "Dr. Marcus Prometheus himself, or what remains. Achieved his goal of transcending humanity but lost his humanity in the process.",
+                        origin: "Self-experimentation with the Divine Blueprint",
+                        notes: "Still trying to solve the equation for perfect humanity. Has been at it for 50 years."
+                    }
+                ]
+            }
+        };
+
+        // Structure Database
+        const structureDatabase = {
+            infinite_atrium: {
+                name: "Infinite Atrium",
+                type: "artificial",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "A vast entrance hall that extends infinitely upward. The walls are lined with non-Euclidean architecture.",
+                        function: "Primary entrance and orientation point",
+                        hazards: "Spatial disorientation"
+                    },
+                    {
+                        level: 2,
+                        description: "The geometry actively resists measurement. Each floor above appears to be larger than the one below, defying physical laws.",
+                        materials: "Reality-anchored concrete, probability-locked steel",
+                        features: "Self-repairing architecture, adaptive lighting"
+                    },
+                    {
+                        level: 3,
+                        description: "The atrium exists in a controlled spatial loop. Those who fall from the infinite height eventually land where they started.",
+                        origin: "First successful Singularity implementation",
+                        notes: "Hidden maintenance tunnels contain the bodies of workers who got lost in the recursive geometry."
+                    }
+                ]
+            },
+            canopy_settlement: {
+                name: "Canopy Settlement",
+                type: "settlement",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Networks of platforms and bridges woven between massive tree branches. Glows with bioluminescent light.",
+                        function: "Rootkin community hub",
+                        hazards: "Unstable branches, territorial defenders"
+                    },
+                    {
+                        level: 2,
+                        description: "The entire settlement is alive, grown rather than built. Buildings are hollow trees shaped by generations of inhabitants.",
+                        materials: "Living wood, symbiotic vines",
+                        features: "Photosynthetic power, root communication network"
+                    },
+                    {
+                        level: 3,
+                        description: "Each structure contains the memory-patterns of its creators. The trees dream of the humans they once were.",
+                        origin: "Voluntary colonization during the Green Dream protocol",
+                        notes: "The central tree still receives mail for residents who transformed decades ago."
+                    }
+                ]
+            },
+            memory_oasis: {
+                name: "Memory Oasis",
+                type: "anomalous",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Pools of liquid memory surrounded by crystallized time. Drinking from them grants temporary knowledge.",
+                        function: "Information repository",
+                        hazards: "Memory addiction, identity confusion"
+                    },
+                    {
+                        level: 2,
+                        description: "Each pool contains the extracted memories of specific individuals. Some pools have turned black with traumatic experiences.",
+                        materials: "Crystallized temporal essence",
+                        features: "Memory extraction, experience transfer"
+                    },
+                    {
+                        level: 3,
+                        description: "The oases are mass graves of consciousness. Thousands of minds were drained to create these repositories.",
+                        origin: "Project Mnemonic's 'volunteer' program",
+                        notes: "Sometimes you can hear them screaming in the ripples."
+                    }
+                ]
+            },
+            probability_temple: {
+                name: "Calculation Temple",
+                type: "artificial",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "A structure that exists in multiple probable states. Rooms appear and disappear based on statistical likelihood.",
+                        function: "Probability manipulation center",
+                        hazards: "Reality uncertainty, paradox zones"
+                    },
+                    {
+                        level: 2,
+                        description: "Contains quantum computers that calculate and manifest probable futures. The priests worship mathematics itself.",
+                        materials: "Quantum-locked matter, probability fabric",
+                        features: "Future prediction, outcome manipulation"
+                    },
+                    {
+                        level: 3,
+                        description: "The temple exists because someone calculated it should. It maintains itself through pure statistical necessity.",
+                        origin: "Spontaneous manifestation via probability cascade",
+                        notes: "The basement contains all the improbable things that had to not exist for the temple to be."
+                    }
+                ]
+            }
+        };
+
+        // Initialize the application
+        function init() {
+            loadGameState();
+            initializeTower();
+            initializeMonsters();
+            initializeStructures();
+            setupEventListeners();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Mode toggle
+            document.getElementById('modeToggle').addEventListener('click', function() {
+                this.classList.toggle('dm-mode');
+                gameState.isDMMode = this.classList.contains('dm-mode');
+                updateVisibility();
+            });
+
+            // Navigation tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    if (!this.classList.contains('locked')) {
+                        switchPage(this.dataset.page);
+                    }
+                });
+            });
+
+            // Search and filters
+            document.getElementById('searchInput')?.addEventListener('input', (e) => {
+                searchFloors(e.target.value);
+            });
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    if (gameState.currentPage === 'towers') {
+                        filterFloors(this.dataset.filter);
+                    } else if (gameState.currentPage === 'monsters') {
+                        filterMonsters(this.dataset.filter);
+                    } else if (gameState.currentPage === 'structures') {
+                        filterStructures(this.dataset.filter);
+                    }
+                });
+            });
+
+            // Random floor button
+            document.getElementById('randomFloor')?.addEventListener('click', getRandomFloor);
+
+            // Modal close
+            document.getElementById('modalClose')?.addEventListener('click', closeModal);
+            document.getElementById('detailModal')?.addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+        }
+
+        // Switch between pages
+        function switchPage(page) {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.page === page);
+            });
+            
+            document.querySelectorAll('.page-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(`${page}-page`).classList.add('active');
+            gameState.currentPage = page;
+        }
+
+        // Initialize tower floors
+        function initializeTower() {
+            const grid = document.getElementById('towerGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            for (let i = 100; i >= 1; i--) {
+                const tile = document.createElement('div');
+                tile.className = 'floor-tile';
+                tile.textContent = i;
+                tile.dataset.floor = i;
+                
+                const isDiscovered = gameState.isDMMode || gameState.discoveredFloors.has(i);
+                
+                if (!isDiscovered) {
+                    tile.classList.add('undiscovered');
+                } else {
+                    const data = floorData[i];
+                    if (data) {
+                        if (data.status === 'detailed') {
+                            tile.classList.add('detailed');
+                        }
+                    }
+                }
+                
+                tile.addEventListener('click', () => {
+                    if (isDiscovered || gameState.isDMMode) {
+                        showFloorDetail(i);
+                    }
+                });
+                
+                grid.appendChild(tile);
+            }
+        }
+
+        // Initialize monster encyclopedia
+        function initializeMonsters() {
+            const grid = document.getElementById('monsterGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            Object.keys(monsterDatabase).forEach(monsterId => {
+                const monster = monsterDatabase[monsterId];
+                const observations = gameState.monsterObservations[monsterId] || 0;
+                const isDiscovered = gameState.isDMMode || observations > 0;
+                
+                if (isDiscovered) {
+                    const card = createMonsterCard(monsterId, monster, observations);
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        // Create monster card
+        function createMonsterCard(monsterId, monster, observations) {
+            const maxLevel = gameState.isDMMode ? 3 : Math.min(observations, 3);
+            const currentData = monster.observationLevels[maxLevel - 1] || monster.observationLevels[0];
+            
+            const card = document.createElement('div');
+            card.className = 'entity-card';
+            card.dataset.type = monster.type;
+            
+            card.innerHTML = `
+                <div class="entity-header">
+                    <div class="entity-name">${monster.name}</div>
+                    <div class="observation-level">
+                        ${[1,2,3].map(i => `<div class="obs-pip ${i <= maxLevel ? 'filled' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                <div class="entity-type">${monster.type}</div>
+                <div class="entity-description">${currentData.description}</div>
+                <div class="entity-stats">
+                    <div class="stat-item">
+                        <span>Threat:</span>
+                        <span class="stat-value">${currentData.threat || '???'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Behavior:</span>
+                        <span class="stat-value">${currentData.behavior || '???'}</span>
+                    </div>
+                    ${maxLevel >= 2 ? `
+                        <div class="stat-item">
+                            <span>Weakness:</span>
+                            <span class="stat-value">${currentData.weakness || 'Unknown'}</span>
+                        </div>
+                    ` : ''}
+                    ${maxLevel >= 3 ? `
+                        <div class="stat-item">
+                            <span>Origin:</span>
+                            <span class="stat-value">${currentData.origin || 'Classified'}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                ${maxLevel < 3 && !gameState.isDMMode ? `
+                    <div class="unlock-hint">
+                        Observation Level ${maxLevel}/3 - Continue encounters to unlock more information
+                    </div>
+                ` : ''}
+            `;
+            
+            card.addEventListener('click', () => showMonsterDetail(monsterId));
+            return card;
+        }
+
+        // Initialize structures
+        function initializeStructures() {
+            const grid = document.getElementById('structureGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            Object.keys(structureDatabase).forEach(structureId => {
+                const structure = structureDatabase[structureId];
+                const observations = gameState.structureObservations[structureId] || 0;
+                const isDiscovered = gameState.isDMMode || observations > 0;
+                
+                if (isDiscovered) {
+                    const card = createStructureCard(structureId, structure, observations);
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        // Create structure card
+        function createStructureCard(structureId, structure, observations) {
+            const maxLevel = gameState.isDMMode ? 3 : Math.min(observations, 3);
+            const currentData = structure.observationLevels[maxLevel - 1] || structure.observationLevels[0];
+            
+            const card = document.createElement('div');
+            card.className = 'entity-card';
+            card.dataset.type = structure.type;
+            
+            card.innerHTML = `
+                <div class="entity-header">
+                    <div class="entity-name">${structure.name}</div>
+                    <div class="observation-level">
+                        ${[1,2,3].map(i => `<div class="obs-pip ${i <= maxLevel ? 'filled' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                <div class="entity-type">${structure.type}</div>
+                <div class="entity-description">${currentData.description}</div>
+                <div class="entity-stats">
+                    <div class="stat-item">
+                        <span>Function:</span>
+                        <span class="stat-value">${currentData.function || '???'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Hazards:</span>
+                        <span class="stat-value">${currentData.hazards || '???'}</span>
+                    </div>
+                    ${maxLevel >= 2 ? `
+                        <div class="stat-item">
+                            <span>Materials:</span>
+                            <span class="stat-value">${currentData.materials || 'Unknown'}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                ${maxLevel < 3 && !gameState.isDMMode ? `
+                    <div class="unlock-hint">
+                        Observation Level ${maxLevel}/3 - Explore further to unlock more information
+                    </div>
+                ` : ''}
+            `;
+            
+            card.addEventListener('click', () => showStructureDetail(structureId));
+            return card;
+        }
+
+        // Show floor details
+        function showFloorDetail(floorNumber) {
+            document.querySelectorAll('.floor-tile').forEach(tile => {
+                tile.classList.remove('selected');
+            });
+            
+            document.querySelector(`[data-floor="${floorNumber}"]`).classList.add('selected');
+            
+            document.getElementById('defaultView').classList.remove('active');
+            document.querySelectorAll('.floor-detail:not(#defaultView)').forEach(el => el.remove());
+            
+            let data = floorData[floorNumber];
+            if (!data) {
+                data = generateFloorTemplate(floorNumber);
+            }
+            
+            const detailDiv = document.createElement('div');
+            detailDiv.className = 'floor-detail active';
+            detailDiv.innerHTML = `
+                <div class="floor-header">
+                    <div class="floor-title">${data.name}</div>
+                    <div class="floor-number">Floor ${floorNumber} • ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} • ${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-card">
+                        <h3>Environment</h3>
+                        <p>${data.environment}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Singularity Effect</h3>
+                        <p>${data.singularity}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Inhabitants</h3>
+                        <p>${data.inhabitants}</p>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Challenges</h3>
+                        <p>${data.challenges}</p>
+                    </div>
+                </div>
+                <div class="detail-card">
+                    <h3>Available Resources</h3>
+                    <p>${data.resources}</p>
+                </div>
+                <div class="detail-card">
+                    <h3>GM Notes</h3>
+                    <p>${data.notes}</p>
+                    ${data.status === 'basic' ? '<p style="color: #888; font-style: italic; margin-top: 10px;">This floor uses a basic template. Expand and customize it for your campaign!</p>' : ''}
+                </div>
+                ${gameState.isDMMode && data.monsters ? `
+                    <div class="detail-card">
+                        <h3>Associated Entities</h3>
+                        <p><strong>Monsters:</strong> ${data.monsters.map(m => monsterDatabase[m]?.name || m).join(', ')}</p>
+                        <p><strong>Structures:</strong> ${data.structures.map(s => structureDatabase[s]?.name || s).join(', ')}</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('detailSection').appendChild(detailDiv);
+            
+            // Add to discovered floors if in player mode
+            if (!gameState.isDMMode && !gameState.discoveredFloors.has(floorNumber)) {
+                gameState.discoveredFloors.add(floorNumber);
+                saveGameState();
+            }
+        }
+
+        // Generate floor template for undeveloped floors
+        function generateFloorTemplate(floorNumber) {
+            const templates = [
+                { type: "environmental", themes: ["Frozen tundra", "Volcanic chambers", "Floating islands", "Underground caverns", "Crystal formations"] },
+                { type: "social", themes: ["Corporate dystopia", "Tribal societies", "Hive minds", "Isolated communities", "Trading posts"] },
+                { type: "technological", themes: ["AI networks", "Virtual reality", "Time manipulation", "Dimensional rifts", "Quantum experiments"] },
+                { type: "hazardous", themes: ["Toxic waste", "Radiation zones", "Predator ecosystems", "Psychological warfare", "Reality breaks"] }
+            ];
+            
+            const template = templates[floorNumber % templates.length];
+            const theme = template.themes[floorNumber % template.themes.length];
+            
+            return {
+                name: `Floor ${floorNumber} - ${theme}`,
+                type: template.type,
+                status: "basic",
+                environment: `[Template] A ${theme.toLowerCase()} environment with infinite expansion capabilities.`,
+                singularity: "[Template] Unique Singularity effect to be determined based on campaign needs.",
+                inhabitants: "[Template] Adapted humans and possible AI constructs specific to this environment.",
+                challenges: "[Template] Environmental hazards and social/technological obstacles.",
+                resources: "[Template] Specialized materials and information relevant to this floor's theme.",
+                notes: "This floor awaits development. Use this template as a starting point for your campaign needs."
+            };
+        }
+
+        // Filter functions
+        function filterFloors(filterType) {
+            const tiles = document.querySelectorAll('.floor-tile');
+            tiles.forEach(tile => {
+                const floorNumber = parseInt(tile.dataset.floor);
+                const isDiscovered = gameState.isDMMode || gameState.discoveredFloors.has(floorNumber);
+                let data = floorData[floorNumber];
+                if (!data) {
+                    data = generateFloorTemplate(floorNumber);
+                }
+                
+                let shouldShow = false;
+                
+                if (filterType === 'all') {
+                    shouldShow = true;
+                } else if (filterType === 'discovered') {
+                    shouldShow = isDiscovered;
+                } else if (filterType === 'detailed') {
+                    shouldShow = isDiscovered && data.status === 'detailed';
+                } else {
+                    shouldShow = isDiscovered && data.type === filterType;
+                }
+                
+                tile.style.display = shouldShow ? 'flex' : 'none';
+            });
+        }
+
+        function filterMonsters(filterType) {
+            const cards = document.querySelectorAll('#monsterGrid .entity-card');
+            cards.forEach(card => {
+                const shouldShow = filterType === 'all' || card.dataset.type === filterType;
+                card.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+
+        function filterStructures(filterType) {
+            const cards = document.querySelectorAll('#structureGrid .entity-card');
+            cards.forEach(card => {
+                const shouldShow = filterType === 'all' || card.dataset.type === filterType;
+                card.style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+
+        function searchFloors(query) {
+            const tiles = document.querySelectorAll('.floor-tile');
+            tiles.forEach(tile => {
+                const floorNumber = parseInt(tile.dataset.floor);
+                const isDiscovered = gameState.isDMMode || gameState.discoveredFloors.has(floorNumber);
+                
+                if (!isDiscovered) {
+                    tile.style.display = 'none';
+                    return;
+                }
+                
+                let data = floorData[floorNumber];
+                if (!data) {
+                    data = generateFloorTemplate(floorNumber);
+                }
+                
+                const searchText = `${data.name} ${data.environment} ${data.singularity} ${data.inhabitants}`.toLowerCase();
+                tile.style.display = searchText.includes(query.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        function getRandomFloor() {
+            const discovered = Array.from(gameState.discoveredFloors);
+            if (discovered.length > 0) {
+                const randomFloor = discovered[Math.floor(Math.random() * discovered.length)];
+                showFloorDetail(randomFloor);
+            }
+        }
+
+        // Update visibility based on mode
+        function updateVisibility() {
+            initializeTower();
+            initializeMonsters();
+            initializeStructures();
+        }
+
+        // Modal functions
+        function showMonsterDetail(monsterId) {
+            const monster = monsterDatabase[monsterId];
+            const observations = gameState.isDMMode ? 3 : (gameState.monsterObservations[monsterId] || 1);
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <h2 style="color: #ffdd00; margin-bottom: 20px;">${monster.name}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Type:</span> 
+                    <span style="color: #e94560; text-transform: uppercase;">${monster.type}</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Observation Level:</span>
+                    <div class="observation-level" style="display: inline-flex; margin-left: 10px;">
+                        ${[1,2,3].map(i => `<div class="obs-pip ${i <= observations ? 'filled' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                ${monster.observationLevels.slice(0, observations).map((level, index) => `
+                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-left: 3px solid ${index === observations - 1 ? '#ffdd00' : '#666'};">
+                        <h3 style="color: #ffdd00; margin-bottom: 10px;">Observation Level ${index + 1}</h3>
+                        <p style="color: #b0b0b0; margin-bottom: 10px;">${level.description}</p>
+                        ${level.threat ? `<p><span style="color: #888;">Threat Level:</span> <span style="color: #e94560;">${level.threat}</span></p>` : ''}
+                        ${level.behavior ? `<p><span style="color: #888;">Behavior:</span> <span style="color: #e94560;">${level.behavior}</span></p>` : ''}
+                        ${level.weakness ? `<p><span style="color: #888;">Weakness:</span> <span style="color: #ffdd00;">${level.weakness}</span></p>` : ''}
+                        ${level.abilities ? `<p><span style="color: #888;">Abilities:</span> <span style="color: #e94560;">${level.abilities}</span></p>` : ''}
+                        ${level.origin ? `<p><span style="color: #888;">Origin:</span> <span style="color: #b0b0b0;">${level.origin}</span></p>` : ''}
+                        ${level.notes ? `<p style="margin-top: 10px; font-style: italic; color: #888;">${level.notes}</p>` : ''}
+                    </div>
+                `).join('')}
+                ${observations < 3 && !gameState.isDMMode ? `
+                    <div style="text-align: center; padding: 20px; background: rgba(233,69,96,0.1); border-radius: 5px;">
+                        <p style="color: #888;">Continue observing this entity to unlock more information.</p>
+                        <p style="color: #e94560; margin-top: 10px;">Next observation will reveal: Level ${observations + 1} data</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function showStructureDetail(structureId) {
+            const structure = structureDatabase[structureId];
+            const observations = gameState.isDMMode ? 3 : (gameState.structureObservations[structureId] || 1);
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <h2 style="color: #ffdd00; margin-bottom: 20px;">${structure.name}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Type:</span> 
+                    <span style="color: #e94560; text-transform: uppercase;">${structure.type}</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Observation Level:</span>
+                    <div class="observation-level" style="display: inline-flex; margin-left: 10px;">
+                        ${[1,2,3].map(i => `<div class="obs-pip ${i <= observations ? 'filled' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                ${structure.observationLevels.slice(0, observations).map((level, index) => `
+                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-left: 3px solid ${index === observations - 1 ? '#ffdd00' : '#666'};">
+                        <h3 style="color: #ffdd00; margin-bottom: 10px;">Observation Level ${index + 1}</h3>
+                        <p style="color: #b0b0b0; margin-bottom: 10px;">${level.description}</p>
+                        ${level.function ? `<p><span style="color: #888;">Function:</span> <span style="color: #e94560;">${level.function}</span></p>` : ''}
+                        ${level.hazards ? `<p><span style="color: #888;">Hazards:</span> <span style="color: #e94560;">${level.hazards}</span></p>` : ''}
+                        ${level.materials ? `<p><span style="color: #888;">Materials:</span> <span style="color: #ffdd00;">${level.materials}</span></p>` : ''}
+                        ${level.features ? `<p><span style="color: #888;">Features:</span> <span style="color: #e94560;">${level.features}</span></p>` : ''}
+                        ${level.origin ? `<p><span style="color: #888;">Origin:</span> <span style="color: #b0b0b0;">${level.origin}</span></p>` : ''}
+                        ${level.notes ? `<p style="margin-top: 10px; font-style: italic; color: #888;">${level.notes}</p>` : ''}
+                    </div>
+                `).join('')}
+                ${observations < 3 && !gameState.isDMMode ? `
+                    <div style="text-align: center; padding: 20px; background: rgba(233,69,96,0.1); border-radius: 5px;">
+                        <p style="color: #888;">Continue exploring this structure to unlock more information.</p>
+                        <p style="color: #e94560; margin-top: 10px;">Next observation will reveal: Level ${observations + 1} data</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // Simulate adding observations (for testing - integrate with your game system)
+        window.addObservation = function(type, entityId) {
+            if (type === 'monster') {
+                gameState.monsterObservations[entityId] = (gameState.monsterObservations[entityId] || 0) + 1;
+            } else if (type === 'structure') {
+                gameState.structureObservations[entityId] = (gameState.structureObservations[entityId] || 0) + 1;
+            }
+            saveGameState();
+            initializeMonsters();
+            initializeStructures();
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

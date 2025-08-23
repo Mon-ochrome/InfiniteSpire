@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structures & Biomes - The Infinite Spire</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>STRUCTURES & BIOMES</h1>
+        <p>Documented environmental anomalies and constructions</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">Home</a>
+        <a href="floors.html" class="nav-tab">Tower Floors</a>
+        <a href="monsters.html" class="nav-tab">Monster Encyclopedia</a>
+        <a href="structures.html" class="nav-tab active">Structures & Biomes</a>
+        <a href="items.html" class="nav-tab">Items & Artifacts</a>
+        <a href="lore.html" class="nav-tab">Research Logs</a>
+        <a href="editor.html" class="nav-tab dm-only" style="display: none;">Database Editor</a>
+    </nav>
+
+    <div class="container">
+        <div class="encyclopedia-filters">
+            <h2 style="color: #ffdd00; margin-bottom: 15px;">Filter Structures</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Discovered</button>
+                <button class="filter-btn" data-filter="natural">Natural Biomes</button>
+                <button class="filter-btn" data-filter="artificial">Artificial Structures</button>
+                <button class="filter-btn" data-filter="anomalous">Anomalous Zones</button>
+                <button class="filter-btn" data-filter="settlement">Settlements</button>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <input type="text" id="searchStructures" class="search-input" placeholder="Search structures...">
+            </div>
+
+            <div class="dm-only" style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                <h3 style="color: #ffdd00; margin-bottom: 10px;">DM Controls</h3>
+                <button class="btn" onclick="showAllStructures()">Show All Structures</button>
+                <button class="btn" onclick="addExploration()">➕ Add Exploration</button>
+                <button class="btn" onclick="resetStructureObservations()">🔄 Reset Observations</button>
+            </div>
+        </div>
+
+        <div class="encyclopedia-grid" id="structureGrid">
+            <!-- Structure cards will be generated here -->
+        </div>
+
+        <!-- Exploration Tracker (DM Only) -->
+        <div class="dm-only detail-card" style="margin-top: 30px;">
+            <h3>Quick Exploration Tracker</h3>
+            <p style="color: #888; margin-bottom: 15px;">Track structure explorations to increase player observation levels</p>
+            <div class="edit-form">
+                <div class="form-group">
+                    <label>Structure ID</label>
+                    <select id="explorationStructure">
+                        <!-- Options will be populated -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Exploration Depth</label>
+                    <select id="explorationDepth">
+                        <option value="1">Surface Observation (Level 1)</option>
+                        <option value="2">Detailed Investigation (Level 2)</option>
+                        <option value="3">Complete Understanding (Level 3)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="recordExploration()">Record Exploration</button>
+            </div>
+        </div>
+
+        <!-- Biome Relationships -->
+        <div class="detail-card" style="margin-top: 30px;">
+            <h3>Known Biome Interactions</h3>
+            <p style="color: #888; margin-bottom: 15px;">How different structures and biomes affect each other</p>
+            <div id="biomeRelationships">
+                <!-- Will be populated with discovered relationships -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Structure Detail Modal -->
+    <div class="modal" id="structureModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let structureDatabase = {};
+
+        async function initStructuresPage() {
+            structureDatabase = await loadDatabase('structures.json');
+            
+            if (isDMMode()) {
+                populateExplorationTracker();
+            }
+            
+            // Setup event listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    filterStructures(this.dataset.filter);
+                });
+            });
+            
+            document.getElementById('searchStructures').addEventListener('input', (e) => {
+                searchStructures(e.target.value);
+            });
+            
+            displayStructures();
+            displayBiomeRelationships();
+        }
+
+        function displayStructures(filter = 'all', searchQuery = '') {
+            const grid = document.getElementById('structureGrid');
+            const gameState = loadGameState();
+            
+            grid.innerHTML = '';
+            
+            let structuresToShow = Object.entries(structureDatabase).filter(([id, structure]) => {
+                const isDiscovered = isDMMode() || (gameState.structureObservations[id] && gameState.structureObservations[id] > 0);
+                if (!isDiscovered) return false;
+                
+                if (filter !== 'all' && structure.type !== filter) return false;
+                
+                if (searchQuery) {
+                    const searchText = `${structure.name} ${structure.type} ${structure.observationLevels[0].description}`.toLowerCase();
+                    if (!searchText.includes(searchQuery.toLowerCase())) return false;
+                }
+                
+                return true;
+            });
+            
+            if (structuresToShow.length === 0) {
+                grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1/-1;">No structures discovered yet. Explore floors to find new locations!</p>';
+                return;
+            }
+            
+            structuresToShow.forEach(([id, structure]) => {
+                const observations = isDMMode() ? 3 : (gameState.structureObservations[id] || 1);
+                const card = createStructureCard(id, structure, observations);
+                grid.appendChild(card);
+            });
+        }
+
+        function createStructureCard(structureId, structure, observations) {
+            const maxLevel = Math.min(observations, 3);
+            const currentData = structure.observationLevels[Math.min(maxLevel - 1, structure.observationLevels.length - 1)];
+            
+            const card = document.createElement('div');
+            card.className = 'entity-card';
+            card.dataset.type = structure.type;
+            card.dataset.id = structureId;
+            
+            // Type icons
+            const typeIcons = {
+                artificial: '🏢',
+                natural: '🌳',
+                anomalous: '⚠️',
+                settlement: '🏘️'
+            };
+            
+            card.innerHTML = `
+                <div class="entity-header">
+                    <div class="entity-name">${typeIcons[structure.type] || '📍'} ${structure.name}</div>
+                    <div class="observation-level">
+                        ${createObservationPips(maxLevel)}
+                    </div>
+                </div>
+                <div class="entity-type">${structure.type}</div>
+                <div class="entity-description">${currentData.description}</div>
+                <div class="entity-stats">
+                    <div class="stat-item">
+                        <span>Function:</span>
+                        <span class="stat-value">${currentData.function || '???'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Hazards:</span>
+                        <span class="stat-value">${currentData.hazards || '???'}</span>
+                    </div>
+                    ${maxLevel >= 2 && currentData.materials ? `
+                        <div class="stat-item">
+                            <span>Materials:</span>
+                            <span class="stat-value">${currentData.materials}</span>
+                        </div>
+                    ` : ''}
+                    ${maxLevel >= 3 && currentData.origin ? `
+                        <div class="stat-item">
+                            <span>Origin:</span>
+                            <span class="stat-value" style="font-size: 0.8em;">${currentData.origin}</span>
+                        </div>
+                    ` : ''}
+                </div>
+                ${maxLevel < 3 && !isDMMode() ? `
+                    <div class="unlock-hint">
+                        Exploration Level ${maxLevel}/3 - Further investigation required
+                    </div>
+                ` : ''}
+            `;
+            
+            card.addEventListener('click', () => showStructureDetail(structureId));
+            return card;
+        }
+
+        function showStructureDetail(structureId) {
+            const structure = structureDatabase[structureId];
+            if (!structure) return;
+            
+            const gameState = loadGameState();
+            const observations = isDMMode() ? 3 : (gameState.structureObservations[structureId] || 1);
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h2 style="color: #ffdd00; margin-bottom: 20px;">${structure.name}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Type:</span> 
+                    <span style="color: #e94560; text-transform: uppercase;">${structure.type}</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Exploration Level:</span>
+                    <div class="observation-level" style="display: inline-flex; margin-left: 10px;">
+                        ${createObservationPips(observations)}
+                    </div>
+                </div>
+                ${structure.observationLevels.slice(0, observations).map((level, index) => `
+                    <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-left: 3px solid ${index === observations - 1 ? '#ffdd00' : '#666'};">
+                        <h3 style="color: #ffdd00; margin-bottom: 10px;">Exploration Level ${index + 1}</h3>
+                        <p style="color: #b0b0b0; margin-bottom: 10px;">${level.description}</p>
+                        ${level.function ? `<p><span style="color: #888;">Function:</span> <span style="color: #e94560;">${level.function}</span></p>` : ''}
+                        ${level.hazards ? `<p><span style="color: #888;">Hazards:</span> <span style="color: #e94560;">${level.hazards}</span></p>` : ''}
+                        ${level.materials ? `<p><span style="color: #888;">Materials:</span> <span style="color: #ffdd00;">${level.materials}</span></p>` : ''}
+                        ${level.features ? `<p><span style="color: #888;">Features:</span> <span style="color: #e94560;">${level.features}</span></p>` : ''}
+                        ${level.origin ? `<p><span style="color: #888;">Origin:</span> <span style="color: #b0b0b0;">${level.origin}</span></p>` : ''}
+                        ${level.notes ? `<p style="margin-top: 10px; font-style: italic; color: #888;">${level.notes}</p>` : ''}
+                    </div>
+                `).join('')}
+                ${observations < 3 && !isDMMode() ? `
+                    <div style="text-align: center; padding: 20px; background: rgba(233,69,96,0.1); border-radius: 5px;">
+                        <p style="color: #888;">Continue exploring this structure to unlock more information.</p>
+                        <p style="color: #e94560; margin-top: 10px;">Next level requires deeper investigation</p>
+                    </div>
+                ` : ''}
+                ${isDMMode() ? `
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                        <h4 style="color: #ffdd00;">DM Information</h4>
+                        <p style="color: #888;">Structure ID: ${structureId}</p>
+                        <p style="color: #888;">Current Player Exploration: Level ${gameState.structureObservations[structureId] || 0}</p>
+                        <button class="btn" onclick="addObservation('structure', '${structureId}'); location.reload();">Add Player Exploration</button>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('structureModal').classList.add('active');
+        }
+
+        function displayBiomeRelationships() {
+            const container = document.getElementById('biomeRelationships');
+            const gameState = loadGameState();
+            
+            // Example relationships that could be discovered
+            const relationships = [
+                {
+                    structures: ['canopy_settlement', 'fungal_groves'],
+                    description: 'Symbiotic relationship: The settlement draws power from the fungal network.',
+                    minObservation: 2
+                },
+                {
+                    structures: ['memory_oasis', 'temporal_maze'],
+                    description: 'Temporal feedback loop: Memories from the oasis shape the maze\'s configuration.',
+                    minObservation: 3
+                },
+                {
+                    structures: ['infinite_atrium', 'stability_anchor'],
+                    description: 'Spatial paradox: The atrium\'s infinite space is contained by probability anchors.',
+                    minObservation: 2
+                }
+            ];
+            
+            const discovered = relationships.filter(rel => {
+                if (isDMMode()) return true;
+                return rel.structures.every(s => 
+                    gameState.structureObservations[s] >= rel.minObservation
+                );
+            });
+            
+            if (discovered.length === 0) {
+                container.innerHTML = '<p style="color: #888;">No relationships discovered yet. Explore structures more thoroughly to uncover connections.</p>';
+                return;
+            }
+            
+            container.innerHTML = discovered.map(rel => `
+                <div style="padding: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.3); border-left: 3px solid #ffdd00;">
+                    <p style="color: #ffdd00; margin-bottom: 5px;">${rel.structures.join(' ↔ ')}</p>
+                    <p style="color: #b0b0b0; font-size: 0.9em;">${rel.description}</p>
+                </div>
+            `).join('');
+        }
+
+        // Filter and search functions
+        function filterStructures(type) {
+            displayStructures(type, document.getElementById('searchStructures').value);
+        }
+
+        function searchStructures(query) {
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            displayStructures(activeFilter, query);
+        }
+
+        // DM Functions
+        function showAllStructures() {
+            const grid = document.getElementById('structureGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(structureDatabase).forEach(([id, structure]) => {
+                const card = createStructureCard(id, structure, 3);
+                grid.appendChild(card);
+            });
+        }
+
+        function populateExplorationTracker() {
+            const select = document.getElementById('explorationStructure');
+            if (!select) return;
+            
+            select.innerHTML = Object.entries(structureDatabase).map(([id, structure]) => 
+                `<option value="${id}">${structure.name} (${id})</option>`
+            ).join('');
+        }
+
+        function recordExploration() {
+            const structureId = document.getElementById('explorationStructure').value;
+            const depth = parseInt(document.getElementById('explorationDepth').value);
+            
+            const state = loadGameState();
+            state.structureObservations[structureId] = depth;
+            saveGameState(state);
+            
+            alert(`Set exploration level to ${depth} for ${structureDatabase[structureId].name}`);
+            displayStructures();
+            displayBiomeRelationships();
+        }
+
+        function addExploration() {
+            const structureId = prompt('Enter structure ID (e.g., "memory_oasis"):');
+            if (structureId && structureDatabase[structureId]) {
+                addObservation('structure', structureId);
+                alert(`Added exploration for ${structureDatabase[structureId].name}`);
+                displayStructures();
+            } else {
+                alert('Structure not found!');
+            }
+        }
+
+        function resetStructureObservations() {
+            if (confirm('Reset all structure observations to 0?')) {
+                const state = loadGameState();
+                state.structureObservations = {};
+                saveGameState(state);
+                displayStructures();
+                displayBiomeRelationships();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('structureModal').classList.remove('active');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initStructuresPage);
+    </script>
+</body>
+</html>

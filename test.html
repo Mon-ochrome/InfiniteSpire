@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DM Login Test - The Infinite Spire</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #e94560;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #e94560;
+            border-radius: 10px;
+        }
+
+        h1 {
+            color: #ffdd00;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255,221,0,0.5);
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.3);
+            border-left: 3px solid #ffdd00;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h2 {
+            color: #ffdd00;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #b0b0b0;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .password-reveal {
+            background: rgba(233,69,96,0.1);
+            border: 1px solid #e94560;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .password-reveal h3 {
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .password-reveal code {
+            display: block;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            text-align: center;
+            border: 1px solid #0f0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: rgba(233,69,96,0.2);
+            border: 1px solid #e94560;
+            color: #e94560;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-size: 1em;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            background: #e94560;
+            color: #000;
+        }
+
+        .status {
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .status.active {
+            border: 1px solid #0f0;
+            color: #0f0;
+        }
+
+        .status.inactive {
+            border: 1px solid #f00;
+            color: #f00;
+        }
+
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .toggle-switch {
+            width: 60px;
+            height: 30px;
+            background: rgba(233,69,96,0.3);
+            border: 2px solid #e94560;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.dm-mode {
+            background: #e94560;
+        }
+
+        .toggle-slider {
+            width: 24px;
+            height: 24px;
+            background: #ffdd00;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.dm-mode .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .dm-only {
+            display: none;
+            background: rgba(255,221,0,0.1);
+            border: 1px solid #ffdd00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .dm-only h3 {
+            color: #ffdd00;
+            margin-bottom: 10px;
+        }
+
+        .dm-only p {
+            color: #b0b0b0;
+        }
+
+        .obs-pip {
+            width: 8px;
+            height: 8px;
+            border: 1px solid #e94560;
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.3s;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .obs-pip.filled {
+            background: #ffdd00;
+            box-shadow: 0 0 5px #ffdd00;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 DM AUTHENTICATION TEST</h1>
+        
+        <div class="info-box">
+            <h2>How the DM Login System Works</h2>
+            <p>This campaign tool has a built-in authentication system to protect DM-only features from players.</p>
+            <p>Features include:</p>
+            <ul style="margin-left: 20px; color: #888;">
+                <li>Password-protected DM Mode</li>
+                <li>Session timeout (1 hour)</li>
+                <li>Lockout after 3 failed attempts (5 minutes)</li>
+                <li>Thematic Prometheus Corporation interface</li>
+                <li>Persistent authentication across pages</li>
+            </ul>
+        </div>
+
+        <div class="password-reveal">
+            <h3>⚠️ DM EYES ONLY - The Access Code</h3>
+            <p style="color: #888;">The Architect's password is:</p>
+            <code>ASCENSION-PROTOCOL-777</code>
+            <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                This represents the Prometheus Corporation's ultimate goal - humanity's ascension through the 777th protocol iteration. 
+                The hint given to players is: "The protocol for humanity's next evolution, followed by the perfect number"
+            </p>
+        </div>
+
+        <div class="mode-toggle">
+            <label style="color: #ffdd00;">Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label style="color: #ffdd00;">DM Mode</label>
+        </div>
+
+        <div id="statusDisplay" class="status inactive">
+            <strong>Current Status:</strong> <span id="statusText">Player Mode - No DM Access</span>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button class="btn" onclick="testLogin()">Test Login System</button>
+            <button class="btn" onclick="checkStatus()">Check Auth Status</button>
+            <button class="btn" onclick="logout()">Logout</button>
+            <button class="btn" onclick="clearAll()">Clear All Data</button>
+        </div>
+
+        <div class="dm-only" id="dmContent">
+            <h3>🎉 DM Mode Active!</h3>
+            <p>You now have access to:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Database Editor</li>
+                <li>All floors and entities visible</li>
+                <li>Observation level controls</li>
+                <li>Quick commands in console</li>
+            </ul>
+            <p style="margin-top: 15px;">Try these console commands:</p>
+            <code style="display: block; background: #000; padding: 10px; margin-top: 10px;">
+                dmCommands.unlockAll()<br>
+                dmCommands.setObservation('monster', 'welcome_construct', 3)<br>
+                dmCommands.resetCampaign()
+            </code>
+        </div>
+
+        <div class="info-box" style="margin-top: 30px;">
+            <h2>Implementation Details</h2>
+            <p><strong>Password Storage:</strong> The password is stored in the JavaScript, not in a database. This is intentional since you mentioned players won't know about the webpage.</p>
+            <p><strong>Session Management:</strong> Uses localStorage to maintain authentication state with timeout.</p>
+            <p><strong>Security Features:</strong> Includes lockout mechanism and session expiry for added realism.</p>
+            <p><strong>Customization:</strong> You can easily change the password by editing the DM_CONFIG object in shared.js</p>
+        </div>
+
+        <div class="info-box">
+            <h2>Testing the System</h2>
+            <ol style="margin-left: 20px; color: #b0b0b0;">
+                <li>Click the toggle switch or "Test Login System" button</li>
+                <li>Enter wrong password to see the error handling</li>
+                <li>After 3 wrong attempts, you'll be locked out for 5 minutes</li>
+                <li>Enter the correct password: <strong>ASCENSION-PROTOCOL-777</strong></li>
+                <li>Once authenticated, DM features become visible</li>
+                <li>Session lasts for 1 hour before requiring re-authentication</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Include the shared.js content inline for this test -->
+    <script>
+        // DM Authentication Configuration
+        const DM_CONFIG = {
+            password: "ASCENSION-PROTOCOL-777",
+            sessionTimeout: 3600000,
+            maxAttempts: 3,
+            lockoutTime: 300000
+        };
+
+        // Check DM authentication
+        function checkDMAuth() {
+            const authData = localStorage.getItem('dmAuth');
+            if (!authData) return false;
+            
+            const auth = JSON.parse(authData);
+            const now = Date.now();
+            
+            if (now - auth.timestamp > DM_CONFIG.sessionTimeout) {
+                localStorage.removeItem('dmAuth');
+                return false;
+            }
+            
+            return auth.authenticated === true;
+        }
+
+        // Test functions for this demo page
+        function testLogin() {
+            showDMLogin();
+        }
+
+        function checkStatus() {
+            const isAuth = checkDMAuth();
+            alert(`DM Authentication: ${isAuth ? 'ACTIVE' : 'INACTIVE'}\n\n${isAuth ? 'You have DM access!' : 'No DM access - authentication required'}`);
+            updateStatus();
+        }
+
+        function logout() {
+            localStorage.removeItem('dmAuth');
+            alert('Logged out of DM Mode');
+            updateStatus();
+        }
+
+        function clearAll() {
+            if (confirm('Clear all authentication data and lockouts?')) {
+                localStorage.removeItem('dmAuth');
+                localStorage.removeItem('dmAttempts');
+                localStorage.removeItem('dmLockout');
+                alert('All authentication data cleared');
+                updateStatus();
+            }
+        }
+
+        function updateStatus() {
+            const isAuth = checkDMAuth();
+            const statusEl = document.getElementById('statusDisplay');
+            const statusText = document.getElementById('statusText');
+            const dmContent = document.getElementById('dmContent');
+            const toggle = document.getElementById('modeToggle');
+            
+            if (isAuth) {
+                statusEl.className = 'status active';
+                statusText.textContent = 'DM Mode Active - Full Access Granted';
+                dmContent.style.display = 'block';
+                toggle.classList.add('dm-mode');
+            } else {
+                statusEl.className = 'status inactive';
+                statusText.textContent = 'Player Mode - No DM Access';
+                dmContent.style.display = 'none';
+                toggle.classList.remove('dm-mode');
+            }
+        }
+
+        // Show DM login prompt (full implementation from shared.js)
+        function showDMLogin() {
+            // Check for lockout
+            const lockout = localStorage.getItem('dmLockout');
+            if (lockout) {
+                const lockoutData = JSON.parse(lockout);
+                if (Date.now() - lockoutData.timestamp < DM_CONFIG.lockoutTime) {
+                    const remaining = Math.ceil((DM_CONFIG.lockoutTime - (Date.now() - lockoutData.timestamp)) / 60000);
+                    alert(`SECURITY LOCKOUT ACTIVE\nAccess denied for ${remaining} more minutes.\n\n- PROMETHEUS CORPORATION SECURITY -`);
+                    return false;
+                } else {
+                    localStorage.removeItem('dmLockout');
+                }
+            }
+            
+            // Create login modal
+            const modal = document.createElement('div');
+            modal.className = 'dm-login-modal';
+            modal.innerHTML = `
+                <div class="dm-login-container">
+                    <div class="dm-login-header">
+                        <div class="dm-login-logo">⬢</div>
+                        <h2>PROMETHEUS CORPORATION</h2>
+                        <p>ARCHITECT ACCESS TERMINAL</p>
+                    </div>
+                    <div class="dm-login-body">
+                        <div class="dm-login-message">
+                            <p>SECURITY CLEARANCE REQUIRED</p>
+                            <p class="dm-login-warning">Unauthorized access will be reported to Head Security</p>
+                        </div>
+                        <form id="dmLoginForm">
+                            <div class="dm-login-field">
+                                <label>AUTHORIZATION CODE:</label>
+                                <input type="password" id="dmPassword" placeholder="Enter clearance code..." autocomplete="off">
+                            </div>
+                            <div class="dm-login-buttons">
+                                <button type="submit" class="dm-login-submit">AUTHENTICATE</button>
+                                <button type="button" class="dm-login-cancel" onclick="closeDMLogin()">CANCEL</button>
+                            </div>
+                        </form>
+                        <div class="dm-login-hint">
+                            <p>Hint: The protocol for humanity's next evolution, followed by the perfect number</p>
+                        </div>
+                    </div>
+                    <div class="dm-login-footer">
+                        <p>INFINITE SPIRE PROJECT • FLOOR 100 • EVOLUTION DIVISION</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Add styles for the modal
+            if (!document.getElementById('dm-login-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'dm-login-styles';
+                styles.textContent = `
+                    .dm-login-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.95);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        z-index: 10000;
+                        animation: fadeIn 0.3s;
+                    }
+                    
+                    .dm-login-container {
+                        background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+                        border: 2px solid #e94560;
+                        border-radius: 10px;
+                        padding: 0;
+                        width: 90%;
+                        max-width: 500px;
+                        box-shadow: 0 0 50px rgba(233,69,96,0.5);
+                        animation: slideUp 0.5s;
+                    }
+                    
+                    .dm-login-header {
+                        background: rgba(233,69,96,0.1);
+                        padding: 20px;
+                        text-align: center;
+                        border-bottom: 1px solid #e94560;
+                    }
+                    
+                    .dm-login-logo {
+                        font-size: 3em;
+                        color: #ffdd00;
+                        margin-bottom: 10px;
+                        animation: pulse 2s infinite;
+                    }
+                    
+                    .dm-login-header h2 {
+                        color: #e94560;
+                        margin: 10px 0;
+                        font-size: 1.5em;
+                        letter-spacing: 2px;
+                    }
+                    
+                    .dm-login-header p {
+                        color: #888;
+                        font-size: 0.9em;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .dm-login-body {
+                        padding: 30px;
+                    }
+                    
+                    .dm-login-message {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    
+                    .dm-login-message p {
+                        color: #ffdd00;
+                        margin: 5px 0;
+                        font-size: 0.9em;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .dm-login-warning {
+                        color: #e94560 !important;
+                        font-size: 0.8em !important;
+                        opacity: 0.8;
+                    }
+                    
+                    .dm-login-field {
+                        margin-bottom: 20px;
+                    }
+                    
+                    .dm-login-field label {
+                        display: block;
+                        color: #888;
+                        margin-bottom: 10px;
+                        font-size: 0.9em;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .dm-login-field input {
+                        width: 100%;
+                        padding: 12px;
+                        background: rgba(0,0,0,0.5);
+                        border: 1px solid #666;
+                        color: #ffdd00;
+                        font-family: 'Courier New', monospace;
+                        font-size: 1.1em;
+                        letter-spacing: 2px;
+                        text-align: center;
+                        transition: all 0.3s;
+                    }
+                    
+                    .dm-login-field input:focus {
+                        outline: none;
+                        border-color: #ffdd00;
+                        box-shadow: 0 0 10px rgba(255,221,0,0.3);
+                    }
+                    
+                    .dm-login-buttons {
+                        display: flex;
+                        gap: 10px;
+                        margin-top: 20px;
+                    }
+                    
+                    .dm-login-submit, .dm-login-cancel {
+                        flex: 1;
+                        padding: 12px;
+                        border: 1px solid #e94560;
+                        background: rgba(233,69,96,0.1);
+                        color: #e94560;
+                        font-family: 'Courier New', monospace;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .dm-login-submit:hover {
+                        background: #e94560;
+                        color: #000;
+                    }
+                    
+                    .dm-login-cancel {
+                        border-color: #666;
+                        color: #888;
+                    }
+                    
+                    .dm-login-cancel:hover {
+                        background: #666;
+                        color: #000;
+                    }
+                    
+                    .dm-login-hint {
+                        margin-top: 20px;
+                        padding: 10px;
+                        background: rgba(255,221,0,0.05);
+                        border-left: 2px solid #ffdd00;
+                        display: none;
+                    }
+                    
+                    .dm-login-hint p {
+                        color: #666;
+                        font-size: 0.8em;
+                        font-style: italic;
+                    }
+                    
+                    .dm-login-footer {
+                        background: rgba(0,0,0,0.5);
+                        padding: 10px;
+                        text-align: center;
+                        border-top: 1px solid #333;
+                    }
+                    
+                    .dm-login-footer p {
+                        color: #555;
+                        font-size: 0.7em;
+                        letter-spacing: 1px;
+                    }
+                    
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    
+                    @keyframes slideUp {
+                        from { transform: translateY(50px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                    
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.1); opacity: 0.8; }
+                    }
+                    
+                    .dm-login-error {
+                        animation: shake 0.5s;
+                        border-color: #ff4444 !important;
+                    }
+                    
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                        20%, 40%, 60%, 80% { transform: translateX(5px); }
+                    }
+                `;
+                document.head.appendChild(styles);
+            }
+            
+            // Handle form submission
+            document.getElementById('dmLoginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const password = document.getElementById('dmPassword').value;
+                const attempts = parseInt(localStorage.getItem('dmAttempts') || '0');
+                
+                if (password === DM_CONFIG.password) {
+                    // Success!
+                    localStorage.setItem('dmAuth', JSON.stringify({
+                        authenticated: true,
+                        timestamp: Date.now()
+                    }));
+                    localStorage.removeItem('dmAttempts');
+                    
+                    // Show success message
+                    const container = document.querySelector('.dm-login-container');
+                    container.innerHTML = `
+                        <div class="dm-login-header">
+                            <div class="dm-login-logo">✓</div>
+                            <h2>ACCESS GRANTED</h2>
+                            <p>Welcome, Architect</p>
+                        </div>
+                        <div class="dm-login-body" style="text-align: center;">
+                            <p style="color: #0f0; margin-bottom: 20px;">Authentication successful.</p>
+                            <p style="color: #888; font-size: 0.9em;">Initializing Architect Interface...</p>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        closeDMLogin();
+                        updateStatus();
+                    }, 2000);
+                    
+                } else {
+                    // Failed attempt
+                    const newAttempts = attempts + 1;
+                    localStorage.setItem('dmAttempts', newAttempts.toString());
+                    
+                    if (newAttempts >= DM_CONFIG.maxAttempts) {
+                        // Lockout
+                        localStorage.setItem('dmLockout', JSON.stringify({
+                            timestamp: Date.now()
+                        }));
+                        localStorage.removeItem('dmAttempts');
+                        
+                        alert(`SECURITY BREACH DETECTED\n\nMaximum attempts exceeded.\nTerminal locked for 5 minutes.\n\n- PROMETHEUS CORPORATION SECURITY -`);
+                        closeDMLogin();
+                    } else {
+                        // Show error
+                        const input = document.getElementById('dmPassword');
+                        input.classList.add('dm-login-error');
+                        input.value = '';
+                        input.placeholder = `INVALID CODE - ${DM_CONFIG.maxAttempts - newAttempts} attempts remaining`;
+                        
+                        // Show hint after first failed attempt
+                        if (newAttempts === 1) {
+                            document.querySelector('.dm-login-hint').style.display = 'block';
+                        }
+                        
+                        setTimeout(() => {
+                            input.classList.remove('dm-login-error');
+                        }, 500);
+                    }
+                }
+            });
+            
+            document.getElementById('dmPassword').focus();
+        }
+
+        function closeDMLogin() {
+            const modal = document.querySelector('.dm-login-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Toggle handler
+        document.getElementById('modeToggle').addEventListener('click', function() {
+            const wantsDM = !this.classList.contains('dm-mode');
+            
+            if (wantsDM) {
+                if (!checkDMAuth()) {
+                    showDMLogin();
+                }
+            } else {
+                if (confirm('Exit Architect Mode?')) {
+                    logout();
+                }
+            }
+        });
+
+        // Initialize on load
+        updateStatus();
+    </script>
+</body>
+</html>

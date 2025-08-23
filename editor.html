@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Editor - The Infinite Spire</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>DATABASE EDITOR</h1>
+        <p>Modify and manage campaign content</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch dm-mode" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">Home</a>
+        <a href="floors.html" class="nav-tab">Tower Floors</a>
+        <a href="monsters.html" class="nav-tab">Monster Encyclopedia</a>
+        <a href="structures.html" class="nav-tab">Structures & Biomes</a>
+        <a href="items.html" class="nav-tab">Items & Artifacts</a>
+        <a href="lore.html" class="nav-tab">Research Logs</a>
+        <a href="editor.html" class="nav-tab active dm-only">Database Editor</a>
+    </nav>
+
+    <div class="container">
+        <div class="editor-section">
+            <h2>Database Management</h2>
+            <div class="editor-controls">
+                <select id="editCategory" class="btn">
+                    <option value="monsters">Monsters</option>
+                    <option value="structures">Structures</option>
+                    <option value="floors">Floors</option>
+                    <option value="items">Items</option>
+                    <option value="lore">Lore</option>
+                </select>
+                <button class="btn" onclick="addNewEntry()">➕ Add New Entry</button>
+                <button class="btn" onclick="exportDatabase()">📥 Export Database</button>
+                <button class="btn" onclick="document.getElementById('importDb').click()">📤 Import Database</button>
+                <input type="file" id="importDb" accept=".json" style="display: none;" onchange="importDatabase(event)">
+                <button class="btn" onclick="loadDefaultData()">🔄 Load Default Data</button>
+                <button class="btn danger" onclick="clearCustomData()">🗑️ Clear Custom Data</button>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <h3>Quick Add Entry</h3>
+            <div class="detail-card">
+                <form id="quickAddForm" class="edit-form">
+                    <div class="form-group">
+                        <label for="entryId">Entry ID (unique identifier)</label>
+                        <input type="text" id="entryId" placeholder="e.g., shadow_stalker" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="entryName">Name</label>
+                        <input type="text" id="entryName" placeholder="Display name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="entryType">Type/Category</label>
+                        <select id="entryType">
+                            <option value="aberrant">Aberrant</option>
+                            <option value="mechanical">Mechanical</option>
+                            <option value="evolved">Evolved</option>
+                            <option value="distorted">Distorted</option>
+                            <option value="synthetic">Synthetic</option>
+                            <option value="environmental">Environmental</option>
+                            <option value="social">Social</option>
+                            <option value="technological">Technological</option>
+                            <option value="hazardous">Hazardous</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Add Entry</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <h3>Current Entries</h3>
+            <div id="entriesList" class="editor-grid">
+                <!-- Entries will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div class="modal" id="editModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeEditModal()">&times;</span>
+                <h2 id="modalTitle">Edit Entry</h2>
+                <form id="editForm" class="edit-form">
+                    <div id="editFormContent">
+                        <!-- Dynamic form content -->
+                    </div>
+                    <div class="editor-controls">
+                        <button type="submit" class="btn">Save Changes</button>
+                        <button type="button" class="btn danger" onclick="deleteEntry()">Delete Entry</button>
+                        <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- JSON Editor Modal -->
+        <div class="modal" id="jsonModal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeJsonModal()">&times;</span>
+                <h2>Raw JSON Editor</h2>
+                <p style="color: #888; margin-bottom: 10px;">Edit the raw JSON data directly. Be careful with syntax!</p>
+                <textarea id="jsonEditor" style="width: 100%; height: 400px; font-family: 'Courier New', monospace; background: #0a0a0a; color: #0f0; padding: 10px; border: 1px solid #666;"></textarea>
+                <div class="editor-controls" style="margin-top: 20px;">
+                    <button class="btn" onclick="saveJsonEdit()">Save JSON</button>
+                    <button class="btn" onclick="validateJson()">Validate JSON</button>
+                    <button class="btn" onclick="closeJsonModal()">Cancel</button>
+                </div>
+                <div id="jsonError" style="color: #ff4444; margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let currentCategory = 'monsters';
+        let currentEditId = null;
+        let currentDatabase = {};
+
+        // Default data templates
+        const templates = {
+            monsters: {
+                name: "New Monster",
+                type: "aberrant",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Basic description of the creature.",
+                        threat: "Low/Medium/High",
+                        behavior: "How it typically acts"
+                    },
+                    {
+                        level: 2,
+                        description: "More detailed information about the creature.",
+                        weakness: "Known weaknesses",
+                        abilities: "Special abilities"
+                    },
+                    {
+                        level: 3,
+                        description: "Complete understanding of the creature.",
+                        origin: "How it came to be",
+                        notes: "Additional disturbing details"
+                    }
+                ]
+            },
+            structures: {
+                name: "New Structure",
+                type: "artificial",
+                observationLevels: [
+                    {
+                        level: 1,
+                        description: "Initial observations of the structure.",
+                        function: "Apparent purpose",
+                        hazards: "Immediate dangers"
+                    },
+                    {
+                        level: 2,
+                        description: "Deeper understanding of the structure.",
+                        materials: "Construction materials",
+                        features: "Notable features"
+                    },
+                    {
+                        level: 3,
+                        description: "Complete knowledge of the structure.",
+                        origin: "Who built it and why",
+                        notes: "Hidden secrets"
+                    }
+                ]
+            },
+            floors: {
+                name: "New Floor",
+                type: "environmental",
+                status: "basic",
+                environment: "Description of the environment",
+                singularity: "The unique reality-bending effect",
+                inhabitants: "Who or what lives here",
+                challenges: "Obstacles and dangers",
+                resources: "What can be found or harvested",
+                notes: "DM notes and secrets",
+                monsters: [],
+                structures: []
+            }
+        };
+
+        // Initialize editor
+        function initEditor() {
+            if (!isDMMode()) {
+                alert('This page is only accessible in DM Mode');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            loadCurrentDatabase();
+            
+            document.getElementById('editCategory').addEventListener('change', (e) => {
+                currentCategory = e.target.value;
+                loadEntries();
+            });
+            
+            document.getElementById('quickAddForm').addEventListener('submit', handleQuickAdd);
+            document.getElementById('editForm').addEventListener('submit', handleEditSubmit);
+            
+            loadEntries();
+        }
+
+        // Load current database
+        async function loadCurrentDatabase() {
+            const custom = loadCustomDatabase();
+            
+            // Load default data if needed
+            for (const category of ['monsters', 'structures', 'floors']) {
+                if (!custom[category] || Object.keys(custom[category]).length === 0) {
+                    try {
+                        const defaultData = await loadDatabase(`${category}.json`);
+                        custom[category] = defaultData;
+                    } catch (e) {
+                        custom[category] = {};
+                    }
+                }
+            }
+            
+            currentDatabase = custom;
+            saveCustomDatabase(currentDatabase);
+        }
+
+        // Load entries for current category
+        function loadEntries() {
+            const container = document.getElementById('entriesList');
+            const entries = currentDatabase[currentCategory] || {};
+            
+            container.innerHTML = '';
+            
+            if (Object.keys(entries).length === 0) {
+                container.innerHTML = '<p style="color: #888;">No entries yet. Click "Add New Entry" to create one.</p>';
+                return;
+            }
+            
+            Object.keys(entries).forEach(id => {
+                const entry = entries[id];
+                const card = document.createElement('div');
+                card.className = 'entity-card';
+                card.innerHTML = `
+                    <h3 style="color: #ffdd00; margin-bottom: 10px;">${entry.name || id}</h3>
+                    <p style="color: #888; font-size: 0.9em;">ID: ${id}</p>
+                    <p style="color: #888; font-size: 0.9em;">Type: ${entry.type || 'Unknown'}</p>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" onclick="editEntry('${id}')">Edit</button>
+                        <button class="btn" onclick="editEntryJson('${id}')">Edit JSON</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Add new entry
+        function addNewEntry() {
+            const id = prompt('Enter a unique ID for the new entry (e.g., "shadow_stalker"):');
+            if (!id) return;
+            
+            if (currentDatabase[currentCategory] && currentDatabase[currentCategory][id]) {
+                alert('An entry with this ID already exists!');
+                return;
+            }
+            
+            const template = templates[currentCategory] || {};
+            
+            if (!currentDatabase[currentCategory]) {
+                currentDatabase[currentCategory] = {};
+            }
+            
+            currentDatabase[currentCategory][id] = JSON.parse(JSON.stringify(template));
+            saveCustomDatabase(currentDatabase);
+            loadEntries();
+            editEntry(id);
+        }
+
+        // Quick add handler
+        function handleQuickAdd(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('entryId').value;
+            const name = document.getElementById('entryName').value;
+            const type = document.getElementById('entryType').value;
+            
+            if (!currentDatabase[currentCategory]) {
+                currentDatabase[currentCategory] = {};
+            }
+            
+            if (currentDatabase[currentCategory][id]) {
+                alert('An entry with this ID already exists!');
+                return;
+            }
+            
+            const template = JSON.parse(JSON.stringify(templates[currentCategory] || {}));
+            template.name = name;
+            template.type = type;
+            
+            currentDatabase[currentCategory][id] = template;
+            saveCustomDatabase(currentDatabase);
+            loadEntries();
+            
+            // Clear form
+            document.getElementById('quickAddForm').reset();
+            
+            // Open editor for the new entry
+            editEntry(id);
+        }
+
+        // Edit entry
+        function editEntry(id) {
+            currentEditId = id;
+            const entry = currentDatabase[currentCategory][id];
+            
+            document.getElementById('modalTitle').textContent = `Edit ${entry.name || id}`;
+            
+            const content = document.getElementById('editFormContent');
+            content.innerHTML = generateEditForm(entry);
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        // Generate edit form based on entry structure
+        function generateEditForm(entry) {
+            let html = '';
+            
+            // Basic fields
+            html += `
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" value="${entry.name || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <input type="text" name="type" value="${entry.type || ''}">
+                </div>
+            `;
+            
+            // Handle observation levels if present
+            if (entry.observationLevels) {
+                html += '<h3 style="color: #ffdd00; margin-top: 20px;">Observation Levels</h3>';
+                entry.observationLevels.forEach((level, index) => {
+                    html += `
+                        <div style="border-left: 3px solid #666; padding-left: 15px; margin-bottom: 20px;">
+                            <h4 style="color: #e94560;">Level ${index + 1}</h4>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea name="obs_${index}_description">${level.description || ''}</textarea>
+                            </div>
+                            ${level.threat !== undefined ? `
+                                <div class="form-group">
+                                    <label>Threat</label>
+                                    <input type="text" name="obs_${index}_threat" value="${level.threat || ''}">
+                                </div>
+                            ` : ''}
+                            ${level.behavior !== undefined ? `
+                                <div class="form-group">
+                                    <label>Behavior</label>
+                                    <input type="text" name="obs_${index}_behavior" value="${level.behavior || ''}">
+                                </div>
+                            ` : ''}
+                            ${level.weakness !== undefined ? `
+                                <div class="form-group">
+                                    <label>Weakness</label>
+                                    <input type="text" name="obs_${index}_weakness" value="${level.weakness || ''}">
+                                </div>
+                            ` : ''}
+                            ${level.abilities !== undefined ? `
+                                <div class="form-group">
+                                    <label>Abilities</label>
+                                    <input type="text" name="obs_${index}_abilities" value="${level.abilities || ''}">
+                                </div>
+                            ` : ''}
+                            ${level.origin !== undefined ? `
+                                <div class="form-group">
+                                    <label>Origin</label>
+                                    <textarea name="obs_${index}_origin">${level.origin || ''}</textarea>
+                                </div>
+                            ` : ''}
+                            ${level.notes !== undefined ? `
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <textarea name="obs_${index}_notes">${level.notes || ''}</textarea>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            // Handle floor-specific fields
+            if (currentCategory === 'floors') {
+                html += `
+                    <div class="form-group">
+                        <label>Environment</label>
+                        <textarea name="environment">${entry.environment || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Singularity</label>
+                        <textarea name="singularity">${entry.singularity || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Inhabitants</label>
+                        <textarea name="inhabitants">${entry.inhabitants || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Challenges</label>
+                        <textarea name="challenges">${entry.challenges || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Resources</label>
+                        <textarea name="resources">${entry.resources || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>DM Notes</label>
+                        <textarea name="notes">${entry.notes || ''}</textarea>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+
+        // Handle edit form submission
+        function handleEditSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const entry = currentDatabase[currentCategory][currentEditId];
+            
+            // Update basic fields
+            entry.name = formData.get('name');
+            entry.type = formData.get('type');
+            
+            // Update observation levels
+            if (entry.observationLevels) {
+                entry.observationLevels.forEach((level, index) => {
+                    level.description = formData.get(`obs_${index}_description`) || level.description;
+                    if (formData.get(`obs_${index}_threat`)) level.threat = formData.get(`obs_${index}_threat`);
+                    if (formData.get(`obs_${index}_behavior`)) level.behavior = formData.get(`obs_${index}_behavior`);
+                    if (formData.get(`obs_${index}_weakness`)) level.weakness = formData.get(`obs_${index}_weakness`);
+                    if (formData.get(`obs_${index}_abilities`)) level.abilities = formData.get(`obs_${index}_abilities`);
+                    if (formData.get(`obs_${index}_origin`)) level.origin = formData.get(`obs_${index}_origin`);
+                    if (formData.get(`obs_${index}_notes`)) level.notes = formData.get(`obs_${index}_notes`);
+                });
+            }
+            
+            // Update floor-specific fields
+            if (currentCategory === 'floors') {
+                entry.environment = formData.get('environment');
+                entry.singularity = formData.get('singularity');
+                entry.inhabitants = formData.get('inhabitants');
+                entry.challenges = formData.get('challenges');
+                entry.resources = formData.get('resources');
+                entry.notes = formData.get('notes');
+            }
+            
+            saveCustomDatabase(currentDatabase);
+            loadEntries();
+            closeEditModal();
+        }
+
+        // Edit entry as JSON
+        function editEntryJson(id) {
+            currentEditId = id;
+            const entry = currentDatabase[currentCategory][id];
+            
+            document.getElementById('jsonEditor').value = JSON.stringify(entry, null, 2);
+            document.getElementById('jsonModal').classList.add('active');
+        }
+
+        // Save JSON edit
+        function saveJsonEdit() {
+            const jsonText = document.getElementById('jsonEditor').value;
+            
+            try {
+                const parsed = JSON.parse(jsonText);
+                currentDatabase[currentCategory][currentEditId] = parsed;
+                saveCustomDatabase(currentDatabase);
+                loadEntries();
+                closeJsonModal();
+            } catch (e) {
+                document.getElementById('jsonError').textContent = 'Invalid JSON: ' + e.message;
+            }
+        }
+
+        // Validate JSON
+        function validateJson() {
+            const jsonText = document.getElementById('jsonEditor').value;
+            
+            try {
+                JSON.parse(jsonText);
+                document.getElementById('jsonError').textContent = '✓ Valid JSON';
+                document.getElementById('jsonError').style.color = '#0f0';
+            } catch (e) {
+                document.getElementById('jsonError').textContent = 'Invalid JSON: ' + e.message;
+                document.getElementById('jsonError').style.color = '#ff4444';
+            }
+        }
+
+        // Delete entry
+        function deleteEntry() {
+            if (confirm(`Are you sure you want to delete ${currentEditId}?`)) {
+                delete currentDatabase[currentCategory][currentEditId];
+                saveCustomDatabase(currentDatabase);
+                loadEntries();
+                closeEditModal();
+            }
+        }
+
+        // Export database
+        function exportDatabase() {
+            const dataStr = JSON.stringify(currentDatabase, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `infinite-spire-database-${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+        }
+
+        // Import database
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        currentDatabase = data;
+                        saveCustomDatabase(currentDatabase);
+                        loadEntries();
+                        alert('Database imported successfully!');
+                    } catch (error) {
+                        alert('Error importing file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Load default data
+        async function loadDefaultData() {
+            if (confirm('This will load the default database. Your custom entries will be preserved. Continue?')) {
+                // This would normally load from JSON files
+                // For now, we'll use a small sample
+                const defaultMonsters = {
+                    welcome_construct: {
+                        name: "Welcome Construct",
+                        type: "mechanical",
+                        observationLevels: [
+                            {
+                                level: 1,
+                                description: "Humanoid automaton with a permanent smile carved into its porcelain face.",
+                                threat: "Low",
+                                behavior: "Passive unless provoked"
+                            },
+                            {
+                                level: 2,
+                                description: "The construct's greeting protocols contain subliminal compliance commands.",
+                                weakness: "Disrupted by paradoxical statements",
+                                abilities: "Compliance Field, Protocol Override"
+                            },
+                            {
+                                level: 3,
+                                description: "Former human employees permanently fused with customer service machinery.",
+                                origin: "Early Prometheus automation experiments",
+                                notes: "Some units still receive paychecks to accounts that no longer exist."
+                            }
+                        ]
+                    }
+                };
+                
+                // Merge with existing data
+                currentDatabase.monsters = {...currentDatabase.monsters, ...defaultMonsters};
+                saveCustomDatabase(currentDatabase);
+                loadEntries();
+                alert('Default data loaded!');
+            }
+        }
+
+        // Clear custom data
+        function clearCustomData() {
+            if (confirm('This will delete all custom database entries. This cannot be undone!')) {
+                currentDatabase = {
+                    monsters: {},
+                    structures: {},
+                    floors: {},
+                    items: {},
+                    lore: {}
+                };
+                saveCustomDatabase(currentDatabase);
+                loadEntries();
+            }
+        }
+
+        // Modal functions
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditId = null;
+        }
+
+        function closeJsonModal() {
+            document.getElementById('jsonModal').classList.remove('active');
+            document.getElementById('jsonError').textContent = '';
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initEditor);
+    </script>
+</body>
+</html>
