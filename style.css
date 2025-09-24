@@ -236,6 +236,66 @@ body {
     opacity: 0.6;
 }
 
+.entity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.entity-name {
+    color: #ffdd00;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.entity-type {
+    color: #888;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.entity-description {
+    color: #b0b0b0;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.entity-stats {
+    display: grid;
+    gap: 5px;
+}
+
+.entity-stats .stat-item {
+    display: flex;
+    justify-content: space-between;
+    background: none;
+    padding: 5px 0;
+    text-align: left;
+}
+
+.entity-stats .stat-item span:first-child {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.entity-stats .stat-value {
+    color: #e94560;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
+.unlock-hint {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(233,69,96,0.1);
+    border-radius: 3px;
+    color: #888;
+    font-size: 0.8em;
+    text-align: center;
+}
+
 /* Observation Level */
 .observation-level {
     display: flex;
@@ -269,6 +329,63 @@ body {
 ::-webkit-scrollbar-thumb {
     background: #e94560;
     border-radius: 4px;
+}
+
+.encyclopedia-filters {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #e94560;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    background: rgba(233,69,96,0.1);
+    border: 1px solid #e94560;
+    color: #e94560;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.3s;
+    font-family: inherit;
+    font-size: 0.9em;
+}
+
+.filter-btn:hover {
+    background: rgba(233,69,96,0.3);
+}
+
+.filter-btn.active {
+    background: #e94560;
+    color: #000;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px;
+    background: rgba(20,20,40,0.8);
+    border: 1px solid #666;
+    color: #e94560;
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #ffdd00;
+}
+
+.encyclopedia-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
 }
 
 /* Editor Specific Styles */

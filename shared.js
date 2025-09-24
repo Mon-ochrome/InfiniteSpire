@@ -479,37 +479,14 @@ async function loadDatabase(filename) {
             return custom[category];
         }
         
-        // Otherwise load default (this would normally be a fetch)
-        // For now, return sample data
-        if (filename === 'monsters.json') {
-            return {
-                welcome_construct: {
-                    name: "Welcome Construct",
-                    type: "mechanical",
-                    observationLevels: [
-                        {
-                            level: 1,
-                            description: "Humanoid automaton with a permanent smile carved into its porcelain face.",
-                            threat: "Low",
-                            behavior: "Passive unless provoked"
-                        },
-                        {
-                            level: 2,
-                            description: "The construct's greeting protocols contain subliminal compliance commands.",
-                            weakness: "Disrupted by paradoxical statements",
-                            abilities: "Compliance Field, Protocol Override"
-                        },
-                        {
-                            level: 3,
-                            description: "Former human employees permanently fused with customer service machinery.",
-                            origin: "Early Prometheus automation experiments",
-                            notes: "Some units still receive paychecks to accounts that no longer exist."
-                        }
-                    ]
-                }
-            };
+        // Load from data files
+        const response = await fetch(`data/${filename}`);
+        if (response.ok) {
+            return await response.json();
         }
         
+        // Fallback to empty object if file doesn't exist
+        console.warn(`Could not load ${filename}, using empty data`);
         return {};
     } catch (error) {
         console.error(`Error loading ${filename}:`, error);

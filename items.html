@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Items & Artifacts - The Infinite Spire</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>ITEMS & ARTIFACTS</h1>
+        <p>Recovered technology and anomalous objects</p>
+        <div class="mode-toggle">
+            <label>Player Mode</label>
+            <div class="toggle-switch" id="modeToggle">
+                <div class="toggle-slider"></div>
+            </div>
+            <label>DM Mode</label>
+        </div>
+    </div>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">Home</a>
+        <a href="floors.html" class="nav-tab">Tower Floors</a>
+        <a href="monsters.html" class="nav-tab">Monster Encyclopedia</a>
+        <a href="structures.html" class="nav-tab">Structures & Biomes</a>
+        <a href="items.html" class="nav-tab active">Items & Artifacts</a>
+        <a href="lore.html" class="nav-tab">Research Logs</a>
+        <a href="editor.html" class="nav-tab dm-only" style="display: none;">Database Editor</a>
+    </nav>
+
+    <div class="container">
+        <div class="encyclopedia-filters">
+            <h2 style="color: #ffdd00; margin-bottom: 15px;">Filter Items</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Collected</button>
+                <button class="filter-btn" data-filter="technology">Technology</button>
+                <button class="filter-btn" data-filter="artifact">Artifacts</button>
+                <button class="filter-btn" data-filter="weapon">Weapons</button>
+                <button class="filter-btn" data-filter="tool">Tools</button>
+                <button class="filter-btn" data-filter="anomalous">Anomalous</button>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <input type="text" id="searchItems" class="search-input" placeholder="Search items...">
+            </div>
+
+            <div class="dm-only" style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                <h3 style="color: #ffdd00; margin-bottom: 10px;">DM Controls</h3>
+                <button class="btn" onclick="showAllItems()">Show All Items</button>
+                <button class="btn" onclick="addItem()">➕ Add Item</button>
+                <button class="btn" onclick="resetItems()">🔄 Reset Collection</button>
+            </div>
+        </div>
+
+        <div class="encyclopedia-grid" id="itemGrid">
+            <!-- Item cards will be generated here -->
+        </div>
+
+        <!-- Item Collection Tracker (DM Only) -->
+        <div class="dm-only detail-card" style="margin-top: 30px;">
+            <h3>Quick Item Collection</h3>
+            <p style="color: #888; margin-bottom: 15px;">Add items to player inventory</p>
+            <div class="edit-form">
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="newItemName" placeholder="Enter item name">
+                </div>
+                <div class="form-group">
+                    <label>Item Type</label>
+                    <select id="newItemType">
+                        <option value="technology">Technology</option>
+                        <option value="artifact">Artifact</option>
+                        <option value="weapon">Weapon</option>
+                        <option value="tool">Tool</option>
+                        <option value="anomalous">Anomalous</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="collectItem()">Collect Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Detail Modal -->
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        let itemDatabase = {};
+
+        async function initItemsPage() {
+            itemDatabase = await loadDatabase('items.json');
+            
+            // Setup event listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    filterItems(this.dataset.filter);
+                });
+            });
+            
+            document.getElementById('searchItems').addEventListener('input', (e) => {
+                searchItems(e.target.value);
+            });
+            
+            displayItems();
+        }
+
+        function displayItems(filter = 'all', searchQuery = '') {
+            const grid = document.getElementById('itemGrid');
+            const gameState = loadGameState();
+            
+            grid.innerHTML = '';
+            
+            let itemsToShow = Object.entries(itemDatabase).filter(([id, item]) => {
+                const isCollected = isDMMode() || gameState.itemsCollected[id];
+                if (!isCollected) return false;
+                
+                if (filter !== 'all' && item.type !== filter) return false;
+                
+                if (searchQuery) {
+                    const searchText = `${item.name} ${item.type} ${item.description}`.toLowerCase();
+                    if (!searchText.includes(searchQuery.toLowerCase())) return false;
+                }
+                
+                return true;
+            });
+            
+            if (itemsToShow.length === 0) {
+                grid.innerHTML = '<p style="color: #888; text-align: center; grid-column: 1/-1;">No items collected yet. Explore floors to find artifacts and technology!</p>';
+                return;
+            }
+            
+            itemsToShow.forEach(([id, item]) => {
+                const card = createItemCard(id, item);
+                grid.appendChild(card);
+            });
+        }
+
+        function createItemCard(itemId, item) {
+            const card = document.createElement('div');
+            card.className = 'entity-card';
+            card.dataset.type = item.type;
+            card.dataset.id = itemId;
+            
+            const typeIcons = {
+                technology: '⚙️',
+                artifact: '🔮',
+                weapon: '⚔️',
+                tool: '🔧',
+                anomalous: '❓'
+            };
+            
+            card.innerHTML = `
+                <div class="entity-header">
+                    <div class="entity-name">${typeIcons[item.type] || '📦'} ${item.name}</div>
+                    <div class="rarity-indicator" style="color: ${getRarityColor(item.rarity)};">
+                        ${item.rarity || 'Common'}
+                    </div>
+                </div>
+                <div class="entity-type">${item.type}</div>
+                <div class="entity-description">${item.description}</div>
+                <div class="entity-stats">
+                    ${item.effect ? `
+                        <div class="stat-item">
+                            <span>Effect:</span>
+                            <span class="stat-value">${item.effect}</span>
+                        </div>
+                    ` : ''}
+                    ${item.origin ? `
+                        <div class="stat-item">
+                            <span>Origin:</span>
+                            <span class="stat-value">${item.origin}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            card.addEventListener('click', () => showItemDetail(itemId));
+            return card;
+        }
+
+        function getRarityColor(rarity) {
+            const colors = {
+                'Common': '#888',
+                'Uncommon': '#0f0',
+                'Rare': '#00f',
+                'Epic': '#800080',
+                'Legendary': '#ffa500',
+                'Artifact': '#ffdd00'
+            };
+            return colors[rarity] || '#888';
+        }
+
+        function showItemDetail(itemId) {
+            const item = itemDatabase[itemId];
+            if (!item) return;
+            
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <h2 style="color: #ffdd00; margin-bottom: 20px;">${item.name}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #888;">Type:</span> 
+                    <span style="color: #e94560; text-transform: uppercase;">${item.type}</span>
+                    ${item.rarity ? `
+                        <span style="margin-left: 20px; color: #888;">Rarity:</span>
+                        <span style="color: ${getRarityColor(item.rarity)};">${item.rarity}</span>
+                    ` : ''}
+                </div>
+                <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-left: 3px solid #ffdd00;">
+                    <p style="color: #b0b0b0; margin-bottom: 10px;">${item.description}</p>
+                    ${item.effect ? `<p><span style="color: #888;">Effect:</span> <span style="color: #e94560;">${item.effect}</span></p>` : ''}
+                    ${item.origin ? `<p><span style="color: #888;">Origin:</span> <span style="color: #b0b0b0;">${item.origin}</span></p>` : ''}
+                    ${item.notes ? `<p style="margin-top: 10px; font-style: italic; color: #888;">${item.notes}</p>` : ''}
+                </div>
+                ${isDMMode() ? `
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,221,0,0.1); border-radius: 5px;">
+                        <h4 style="color: #ffdd00;">DM Information</h4>
+                        <p style="color: #888;">Item ID: ${itemId}</p>
+                        <button class="btn" onclick="removeItem('${itemId}')">Remove from Collection</button>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('itemModal').classList.add('active');
+        }
+
+        // Filter and search functions
+        function filterItems(type) {
+            displayItems(type, document.getElementById('searchItems').value);
+        }
+
+        function searchItems(query) {
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            displayItems(activeFilter, query);
+        }
+
+        // DM Functions
+        function showAllItems() {
+            const grid = document.getElementById('itemGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(itemDatabase).forEach(([id, item]) => {
+                const card = createItemCard(id, item);
+                grid.appendChild(card);
+            });
+        }
+
+        function addItem() {
+            const itemId = prompt('Enter item ID (e.g., "quantum_scanner"):');
+            if (itemId && itemDatabase[itemId]) {
+                const state = loadGameState();
+                state.itemsCollected[itemId] = true;
+                saveGameState(state);
+                alert(`Added ${itemDatabase[itemId].name} to collection`);
+                displayItems();
+            } else {
+                alert('Item not found!');
+            }
+        }
+
+        function collectItem() {
+            const name = document.getElementById('newItemName').value;
+            const type = document.getElementById('newItemType').value;
+            
+            if (!name) {
+                alert('Please enter an item name');
+                return;
+            }
+            
+            const itemId = name.toLowerCase().replace(/\s+/g, '_');
+            const state = loadGameState();
+            
+            // Add to database if not exists
+            if (!itemDatabase[itemId]) {
+                itemDatabase[itemId] = {
+                    name: name,
+                    type: type,
+                    description: `A ${type} discovered in the Infinite Spire.`,
+                    rarity: 'Common'
+                };
+            }
+            
+            state.itemsCollected[itemId] = true;
+            saveGameState(state);
+            
+            alert(`Collected ${name}!`);
+            displayItems();
+            
+            // Clear form
+            document.getElementById('newItemName').value = '';
+        }
+
+        function removeItem(itemId) {
+            if (confirm(`Remove ${itemDatabase[itemId].name} from collection?`)) {
+                const state = loadGameState();
+                delete state.itemsCollected[itemId];
+                saveGameState(state);
+                displayItems();
+                closeModal();
+            }
+        }
+
+        function resetItems() {
+            if (confirm('Reset all collected items?')) {
+                const state = loadGameState();
+                state.itemsCollected = {};
+                saveGameState(state);
+                displayItems();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').classList.remove('active');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initItemsPage);
+    </script>
+</body>
+</html>
